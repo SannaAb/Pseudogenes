@@ -10,15 +10,13 @@ import subprocess
 #from subprocess import Popen, PIPE, STDOUT
 import glob 
 import shutil 
-
-
 import pysam
-
 import collections
-
 from collections import Counter
-
 import time
+import argparse
+import logging
+
 
 # Idea: 
 # Extract Split reads CigarNs, Intersect with genes? Pseudogene Candidates!
@@ -54,15 +52,22 @@ import time
 # 21/5-19 Increase the tresholds for softclipping depth otherwise you get an insane amount of hits
 
 
-import logging
+
+def parseArgs():
+    parser = argparse.ArgumentParser(description='Detects processed pseudogenes by looking at DNA data that splits across the splice junctions')
+    parser.add_argument('-I', dest='baminput',help='Bamfile containing alignment performed by a splice aware aligner, need index in the same folder (required)',required=True)
+    parser.add_argument('-S', dest='Sample', help='Sample name, descides the prefix of your outputs together with the output folder (required)', required=True)
+    # What kinds of more tresholds can the user specify? 
+    # Distance for potential pseudogene and the regulair gene 
+    #parser.add_argument('--pseudoCandidateDepth', dest='Psdepth', help='Defines the depth that the user want for the splice junctions', default=5 ,type=int)
+    #parser.add_argument('--InsertDistance', dest='insdistance', help='What is the distance from the parent gene where we can have a insert. We need to have a large number here ', default=5 ,type=int)
+    arguments=parser.parse_args(sys.argv[1:])
+    return arguments
 
 
-
-
-
-def database(): 
-    baminput = sys.argv[1] 
-    Sample = sys.argv[2]
+def database(baminput,Sample): 
+    #baminput = sys.argv[1] 
+    #Sample = sys.argv[2]
     chrominfo = Sample + ".ChromInfo_SortingOrder.txt"
     logging.info('%s\tInput Alignment %s', time.ctime().split(" ")[-2],baminput)
     logging.info('%s\tReading the database files', time.ctime().split(" ")[-2])
@@ -91,7 +96,7 @@ def database():
     Outputfolder=Sample + "_PPsyOut"
     command = "mkdir -p %s" % Outputfolder 
     os.system(command)
-    return (Sample,baminput,chrominfo,genecoords,pseudogenecoords,exoncoords,anndb,annovarscript,Cleaninglist, MovingList, Outputfolder) 
+    return (chrominfo,genecoords,pseudogenecoords,exoncoords,anndb,annovarscript,Cleaninglist, MovingList, Outputfolder) 
     
 def extractingClipped(Sample,baminput, Cleaninglist,MovingList):
     '''
@@ -787,11 +792,11 @@ def cleaning(Cleaninglist, MovingList,Outputfolder):
             except OSError: 
                 pass 
 
-def main():
+def main(baminput,Sample):
     # Create the logger
     logging.basicConfig(level=logging.INFO)
     logging.info('%s\tStarting Ppsyfinder', time.ctime())
-    (Sample,baminput,chrominfo,genecoords,pseudogenecoords,exoncoords,anndb,annovarscript,Cleaninglist,MovingList,Outputfolder)=database()
+    (chrominfo,genecoords,pseudogenecoords,exoncoords,anndb,annovarscript,Cleaninglist,MovingList,Outputfolder)=database(baminput,Sample)
     (Pseudogenecandidatesbed,Cigarbam)=Pseuodogenecandidates(Sample,baminput,exoncoords,pseudogenecoords,chrominfo,genecoords,Cleaninglist, MovingList,Outputfolder)
     bamChimericPairs=extractingchimericReads(Sample, baminput, Cleaninglist, MovingList)
     PseudogeneCandidateChimbed=ChimericReadsOverlapwithPseudogeneCandidates(Sample, bamChimericPairs,Pseudogenecandidatesbed, Cleaninglist, MovingList)
@@ -806,4 +811,7 @@ def main():
     cleaning(Cleaninglist, MovingList,Outputfolder)
     logging.info('%s\tPpsy Finished, results in output folder',time.ctime().split(" ")[-2])
 
-main()
+
+if __name__=='__main__':
+  arguments=parseArgs()
+  main(arguments.baminput, arguments.Sample)
