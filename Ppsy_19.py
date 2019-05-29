@@ -53,9 +53,11 @@ import time
  
 # 21/5-19 Increase the tresholds for softclipping depth otherwise you get an insane amount of hits
 
-#Tst here we are changing stuff sdfsdf
 
 import logging
+
+
+
 
 
 def database(): 
@@ -366,9 +368,13 @@ def intersectClippedPseudogeneCandidates(Sample, clippedmapping, Pseudogenecandi
                         elif pseudochrom == clipsecondchrom:       
                             if pseudostart < clipsecondstart < pseudoend or pseudostart < clipsecondend < pseudoend:
                                 print >> out, "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s" %(pseudogene, pseudochrom, pseudostart, pseudoend, clipfirstchrom, clipfirststart, clipfirstend,clipdepth)
-    pandasdf=pd.read_csv(clippedwithpseudogeneoverlap, sep = "\t", header=None) # If we have the same fusion in different positions in the pseudogene we merge them 
-    pandasdf2= pandasdf.groupby([0,1,2,3,4,5,6], as_index=False)[7].sum()
-    pandasdf2.to_csv(clippedwithpseudogeneoverlap,sep="\t", header = False, index=False)
+    
+    if not os.stat(clippedwithpseudogeneoverlap).st_size==0: # The clipped reads with the pseudogenes might be empty and this will break the loop. Therefore we are making sure that the file is not empty before the analysis
+        pandasdf=pd.read_csv(clippedwithpseudogeneoverlap, sep = "\t", header=None) # If we have the same fusion in different positions in the pseudogene we merge them 
+        pandasdf2= pandasdf.groupby([0,1,2,3,4,5,6], as_index=False)[7].sum()
+        pandasdf2.to_csv(clippedwithpseudogeneoverlap,sep="\t", header = False, index=False)
+    else: 
+        logging.info('%s\tObs the Psedugene clipp overlap is emtpy',time.ctime().split(" ")[-2])
     return clippedwithpseudogeneoverlap
 
 def CombiningClippWithChimericReads(Sample, clippedwithpseudogeneoverlap, PseudogeneCandidateChimbed, Cleaninglist, MovingList):
@@ -383,13 +389,7 @@ def CombiningClippWithChimericReads(Sample, clippedwithpseudogeneoverlap, Pseudo
     DetectedPseudogenesList = [] # List of Pseudogenes that is evident in both chim reads and pairs. We will use thes pseudogenes for the plots  
     Cleaninglist.append(clipandchimevidence)
     with open(clipandchimevidence, "w") as out: 
-        print >> out, "Pseudogene\tP_chrom\tP_start\tP_end\tFus_chrom_left\tFus_start_left\tFus_end_left\tnChimPairs_left\tFus_chrom_right\tFus_start_right\tFus_end_right\tnChimPairs_right\tChimRead_chrom\tChimRead_Start\tChimRead_End\tnChimReads"
-        if os.stat(clippedwithpseudogeneoverlap).st_size==0 and not os.stat(PseudogeneCandidateChimbed).st_size==0: # If the clipped is empty and the chim read is not empty 
-            with open(PseudogeneCandidateChimbed, "r") as chimcoord:
-                for chimline in chimcoord:
-                    chimline = chimline.strip()
-                    chimlineandclipped = chimline + "\tNA\tNA\tNA\tNA"  
-                    print >> out, chimlineandclipped
+        print >> out, "Pseudogene\tP_chrom\tP_start\tP_end\tFus_chrom_left\tFus_start_left\tFus_end_left\tnChimPairs_left\tFus_chrom_right\tFus_start_right\tFus_end_right\tnChimPairs_right\tChimRead_chrom\tChimRead_Start\tChimRead_End\tnChimReads"         
         with open(clippedwithpseudogeneoverlap, "r") as clippedCoord: 
             for cline in clippedCoord:
                 cline = cline.strip() 
