@@ -7,7 +7,6 @@ import itertools
 import csv
 import re
 import subprocess
-#from subprocess import Popen, PIPE, STDOUT
 import glob 
 import shutil 
 import pysam
@@ -49,18 +48,19 @@ import logging
 
 # Adding new databases for the refgene, i am still running the pseudogenes for the ensemble annotation though. Maybe we can change this? Problem is that the refgene does not contains the info about whether or not it is a pseudogene
  
-# 21/5-19 Increase the tresholds for softclipping depth otherwise you get an insane amount of hits
-
-
+#  12/6 obs! The next anchor for the chim pairs might be 5000 nucl away within the same gene
 
 def parseArgs():
     parser = argparse.ArgumentParser(description='Detects processed pseudogenes by looking at DNA data that splits across the splice junctions')
     parser.add_argument('-I', dest='baminput',help='Bamfile containing alignment performed by a splice aware aligner, need index in the same folder (required)',required=True)
     parser.add_argument('-S', dest='Sample', help='Sample name, descides the prefix of your outputs together with the output folder (required)', required=True)
-    # What kinds of more tresholds can the user specify? 
-    # Distance for potential pseudogene and the regulair gene 
-    #parser.add_argument('--pseudoCandidateDepth', dest='Psdepth', help='Defines the depth that the user want for the splice junctions', default=5 ,type=int)
-    #parser.add_argument('--InsertDistance', dest='insdistance', help='What is the distance from the parent gene where we can have a insert. We need to have a large number here ', default=5 ,type=int)
+    parser.add_argument('--pseudoCandidateDepth', dest='Psdepth', help='The minimum depth that supports the splice junctions, these are the resulting processed pseudogene candidates (default 5)', default=5 ,type=int) 
+    parser.add_argument('--InsertDistance', dest='insdistance', help='What is the distance from the parent gene where we can have an pseudogene, low distance might increase the amount of detected pseudogenes but will also increase the amount of false positives. A low distance and you might hit inserted pseudogenes in the parent gene itself which is not very likely (default 200 000)', default=200000,type=int)
+    parser.add_argument('--ChimericPairDepthTreshold', dest='ChimPairDepthTresh', help='The minimum amount of reads to suppport the chimeric pairs in the left anchor, (min 5), (default 10)', default=10,type=int)
+    parser.add_argument('--ChimericPairBinningTreshold', dest='ChimPairBinningTresh', help='When the chimeric pairs are binned into the anchors the binning distance defines the distance for the read to belong to same bin, (default 500)', default=500,type=int)
+    parser.add_argument('--ChimericReadDepthTreshold', dest='ChimReadDepthTresh', help='The minimum amount of reads to support the chimeric reads in the fusion site, (min 5) (default 10)', default=10,type=int)     
+    parser.add_argument('--ChimericReadBinningTreshold', dest='ChimReadBinningTresh', help='When the chimeric reads are binned into the anchors the binning distance defines the distance for the read to belong to same bin', default=10,type=int)
+    parser.add_argument('--MergeChimReadWithChimpairTresh', dest='chimreadpairdistance', help='When we are combining the results from the chimeric pairs and the chimeric reads we combine them if the chimeric read are withing the chimeric pair anchors or the chimeric read are in a user defined distance from the left anchor (default 100)', default=100,type=int)
     arguments=parser.parse_args(sys.argv[1:])
     return arguments
 
@@ -112,26 +112,25 @@ def extractingClipped(Sample,baminput, Cleaninglist,MovingList):
     MovingList.append(bamClipped+".bai")
     return bamClipped
 
-def extractingchimericReads(Sample, baminput, Cleaninglist, MovingList): 
+def extractingchimericReads(Sample, baminput, Cleaninglist, MovingList,insdistance): 
     '''
-    Extracting Reads with large insertsite Either if the mate maps in another chromosome or the insertsite is larger than 100 000 bp  
+    Extracting Reads with large insertsite Either if the mate maps in another chromosome or the insertsite is larger than a user defined treshold, the default is 200 000   
     '''
-    logging.info('%s\tExtracting chimeric reads, ins > 200 000 or seperate chr mapping', time.ctime().split(" ")[-2])
+    logging.info('%s\tExtracting chimeric reads, ins > %s or seperate chr mapping', time.ctime().split(" ")[-2], insdistance)
 
     bamChimericPairs = Sample + ".ChimericReadPairs.bam"
     MovingList.append(bamChimericPairs)
     MovingList.append(bamChimericPairs + ".bai")
-    command = "samtools view %s -h | awk 'function abs(x){return ((x < 0.0) ? -x : x)} $7 != \"=\" || abs($4-$8) > 200000 {print $0}' | samtools view -bS - > %s" %(baminput, bamChimericPairs)  # Obs i increased it to 200 000 as some of the candates are longer than 100 000 bp 
+    command = "samtools view %s -h | awk 'function abs(x){return ((x < 0.0) ? -x : x)} $7 != \"=\" || abs($4-$8) > %s {print $0}' | samtools view -bS - > %s" %(baminput, insdistance,bamChimericPairs)  # Obs i increased it to 200 000 as some of the candates are longer than 100 000 bp 
     os.system(command)
     command = "samtools index %s" % bamChimericPairs 
     os.system(command)
     return bamChimericPairs 
 
-def ChimericReadsOverlapwithPseudogeneCandidates(Sample, bamChimericPairs,Pseudogenecandidatesbed, Cleaninglist, MovingList): 
+def ChimericReadsOverlapwithPseudogeneCandidates(Sample, bamChimericPairs,Pseudogenecandidatesbed, Cleaninglist, MovingList,ChimPairDepthTresh,ChimPairBinningTresh): 
     '''
     Here we look for intersect between pseudogene candidates and chimericreads overlap 
     This will add evidence to the pseudogene candidates by looking at overlap between these coordinates and the softclip coordinates 
-    
     '''
     logging.info('%s\tLooking for an overlap between chimeric reads and Pseudogenes candidates',time.ctime().split(" ")[-2])
     PseudogeneCandidateChimbed = Sample + ".ChimericPairs_AmountOfReads.bed"
@@ -165,7 +164,7 @@ def ChimericReadsOverlapwithPseudogeneCandidates(Sample, bamChimericPairs,Pseudo
                 # Make sure that the output file is not empty,if it is continue with the next coord 
                 if not os.stat(PseudogeneCandidateChimbedtmp).st_size==0:
                     logging.info('%s\tOverlapping coord detected',time.ctime().split(" ")[-2])
-                    logging.info('%s\tStart binning the left and right anchors, atleast 10 i depth',time.ctime().split(" ")[-2])
+                    logging.info('%s\tStart binning the left and right anchors, atleast %s i depth',time.ctime().split(" ")[-2],ChimPairDepthTresh)
                     # Binning using pandas df
                     data = pd.read_csv(PseudogeneCandidateChimbedtmp, sep = "\t", header=None)
                     sorted = data.sort_values([0, 3,1,4]).reset_index(drop=True)
@@ -197,25 +196,25 @@ def ChimericReadsOverlapwithPseudogeneCandidates(Sample, bamChimericPairs,Pseudo
                                         FusionAnchorleftends.append(row.loc[5])
                                         fusionchroms.append(name)
                                     else:
-                                        if abs(PseudogeneanchorLeftstarts[0] - int(row.loc[1])) < 500 and abs(FusionAnchorleftstarts[0] - int(row.loc[4])) < 500: # if the difference from the previous and the new coords is smaller than 500 for both start sites we save them to the binnning
+                                        if abs(PseudogeneanchorLeftstarts[0] - int(row.loc[1])) < ChimPairBinningTresh and abs(FusionAnchorleftstarts[0] - int(row.loc[4])) < ChimPairBinningTresh: # if the difference from the previous and the new coords is smaller than the user defined trehsolds for both start sites we save them to the binnning, 500 is default 
                                             PseudogeneanchorLeftstarts.append(row.loc[1])
                                             PseudogeneanchorLeftends.append(row.loc[2])
                                             FusionAnchorleftstarts.append(row.loc[4])
                                             FusionAnchorleftends.append(row.loc[5])
-                                        elif abs(PseudogeneanchorLeftstarts[0] - row.loc[1]) > 5000 and abs(FusionAnchorleftstarts[0] - int(row.loc[4])) < 500: # If the range within the pseudogene is larger than 5000 you might have found the second anchor. We are further away for the pseudogene anchor then what we would expect, therefore we are have the right anchor if we are in the same range for the fusion still
+                                        elif abs(PseudogeneanchorLeftstarts[0] - row.loc[1]) > 5000 and abs(FusionAnchorleftstarts[0] - int(row.loc[4])) < ChimPairBinningTresh: # If the range within the pseudogene is larger than 5000 you might have found the second anchor. We are further away for the pseudogene anchor then what we would expect, therefore we are have the right anchor if we are in the same range for the fusion still
                                             PseudoanchorRightstarts.append(row.loc[1])
                                             PseudoanchorRightends.append(row.loc[2])
                                             FusionAnchorRightstarts.append(row.loc[4]) # Fusion coord on the right side is the end coord of the read in the pair outside of the gene. Always think you want to have as much space as possible 
                                             FusionAnchorRightends.append(row.loc[5])
                                         else: 
                                             # Now we cannot continue as we are not within the range of anything. If we have enough for the range we count them. Otherwise we skip them and continue the loop                           
-                                            if len(FusionAnchorleftstarts) > 9: 
+                                            if len(FusionAnchorleftstarts) > ChimPairDepthTresh: 
                                                 PseudogeneAnchorleftStart=PseudogeneanchorLeftstarts[0]
                                                 PseudogeneAnchorleftend= PseudogeneanchorLeftends[-1]# important, the value is from the previous row. The current row is the faulty, when getting the previus value you need to use the group index 
                                                 FusionAnchorleftStart = FusionAnchorleftstarts[0]
                                                 FusionAnchorleftEnd = FusionAnchorleftends[-1]
                                                 leftstring = str(row.loc[3]) + "\t" + str(FusionAnchorleftStart) + "\t" + str(FusionAnchorleftEnd) + "\t"+str(len(FusionAnchorleftstarts))
-                                                if len(PseudoanchorRightstarts) > 9: 
+                                                if len(PseudoanchorRightstarts) > ChimPairDepthTresh: 
                                                     # This part tells us we have the right anchor as well 
                                                     PseudogeneAnchorrightStart=PseudoanchorRightstarts[0]
                                                     PseudogeneAnchorrightEnd=PseudoanchorRightends[-1]
@@ -240,14 +239,14 @@ def ChimericReadsOverlapwithPseudogeneCandidates(Sample, bamChimericPairs,Pseudo
                                             FusionAnchorRightstarts=[]
                                             FusionAnchorRightends=[]                                    
                                 else: # We are in the end of the loop
-                                    if len(FusionAnchorleftstarts) > 9:
+                                    if len(FusionAnchorleftstarts) > ChimPairDepthTresh:
                                         PseudogeneAnchorleftStart=PseudogeneanchorLeftstarts[0]
                                         PseudogeneAnchorleftend= PseudogeneanchorLeftends[-1]# important, the value is from the previous row. The current row is the faulty, when getting the previus value you need to use the group index
                                         FusionAnchorleftStart = FusionAnchorleftstarts[0]
                                         FusionAnchorleftEnd = FusionAnchorleftends[-1]
                                         leftstring = str(row.loc[3]) + "\t" + str(FusionAnchorleftStart) + "\t" + str(FusionAnchorleftEnd\
 ) + "\t"+str(len(FusionAnchorleftstarts))
-                                        if len(PseudoanchorRightstarts) > 9:
+                                        if len(PseudoanchorRightstarts) > ChimPairDepthTresh:
                                             # This part tells us we have the right anchor as well 
                                             PseudogeneAnchorrightStart=PseudoanchorRightstarts[0]
                                             PseudogeneAnchorrightEnd=PseudoanchorRightends[-1]
@@ -288,16 +287,16 @@ def ClippedBamtoCoord(bamClipped,Cleaninglist, MovingList):
                     listofreads.append(read)               
     return clippedbed 
 
-def clippedreadbinning(clippedbed, Cleaninglist, MovingList): 
+def clippedreadbinning(clippedbed, Cleaninglist, MovingList,ChimReadDepthTresh,ChimReadBinningTresh): 
     '''
-    Making sure that we have enought depth  over the chimeric reads, atleast 5. Bin the first mapping coord using bedtools merge, then loop through the hits in the chimeric alignment to add them to the first coord 
+    Making sure that we have enought depth  over the chimeric reads, userdefined treshold. Bin the first mapping coord using bedtools merge, then loop through the hits in the chimeric alignment to add them to the first coord 
     '''
     clippedbedrange = clippedbed.split(".bed")[0] + ".clippedrange.bed"
     Cleaninglist.append(clippedbedrange)
     clippedmapping = clippedbed.split(".bed")[0] + ".clipped.bed.withcov.txt"
     Cleaninglist.append(clippedmapping)
-    logging.info('%s\tBinning the clipped reads coords, depth 5',time.ctime().split(" ")[-2])
-    command = "cut -f 1 %s | sed 's/:/\t/g' | sort -k1,1 -k2,2n | awk 'OFS=\"\t\" {print $1,$2,$2}' | mergeBed -c 1 -o count -d 20| awk '$4 > 4 {print $1\"\t\"$2\"\t\"$3}' > %s" %(clippedbed, clippedbedrange) # obs! Overlap Counting as 20 
+    logging.info('%s\tBinning the clipped reads coords, depth %s',time.ctime().split(" ")[-2], ChimReadDepthTresh)
+    command = "cut -f 1 %s | sed 's/:/\t/g' | sort -k1,1 -k2,2n | awk 'OFS=\"\t\" {print $1,$2,$2}' | mergeBed -c 1 -o count -d %s| awk '$4 > 4 {print $1\"\t\"$2\"\t\"$3}' > %s" %(clippedbed, ChimReadBinningTresh,clippedbedrange) # obs! Overlap is counted if they overlap a userdefined treshold away in nucleotides
     os.system(command)
     # Need to now how many lines you have so you start the counting before the for loop breaks below 
     with open(clippedbed) as f:
@@ -331,15 +330,15 @@ def clippedreadbinning(clippedbed, Cleaninglist, MovingList):
                     for key, value in d.iteritems():
                         firstitem = 0 
                         amount = 1 
-                        if len(value) > 9: # If you have atleast 10 in depth 
+                        if len(value) > ChimReadDepthTresh: # If you have atleast 10 in depth by default 
                             sortedlist = sorted(map(int,value))
                             for i in range(1,len(sortedlist)): # Remeber the indexes
-                                if sortedlist[i] - sortedlist[i-1] < 20: # If the previus item is atleast 50 away from the new one
+                                if sortedlist[i] - sortedlist[i-1] < ChimReadBinningTresh: # If the previus item is atleast 20 away from the new one by default
                                     amount += 1 
-                                    if i+1 == len(value) and amount > 9: # If you are reaching the end of the list and you have atleast 5 
+                                    if i+1 == len(value) and amount > ChimReadDepthTresh: # If you are reaching the end of the list and you have atleast 5 
                                         print >> clippedout, line + "\t" + str(amount) + "\t" + key + "\t" + str(sortedlist[firstitem]) + "\t" + str(sortedlist[i])
                                 else: 
-                                    if amount > 9: # not in the end of the list but you have 10
+                                    if amount > ChimReadDepthTresh: # not in the end of the list but you have 10 by default
                                         print >> clippedout,  line + "\t" + str(amount) + "\t" + key + "\t" + str(sortedlist[firstitem]) + "\t" + str(sortedlist[i-1])
                                     firstitem = i 
                                     amount = 1 
@@ -382,11 +381,10 @@ def intersectClippedPseudogeneCandidates(Sample, clippedmapping, Pseudogenecandi
         logging.info('%s\tObs the Psedugene clipp overlap is emtpy',time.ctime().split(" ")[-2])
     return clippedwithpseudogeneoverlap
 
-def CombiningClippWithChimericReads(Sample, clippedwithpseudogeneoverlap, PseudogeneCandidateChimbed, Cleaninglist, MovingList):
+def CombiningClippWithChimericReads(Sample, clippedwithpseudogeneoverlap, PseudogeneCandidateChimbed, Cleaninglist, MovingList,chimreadpairdistance):
     '''
     Adding the evidence to the clipped reads from the chimeric reads 
     '''
-
     clippedlist=[]
     chimlist=[]
     logging.info('%s\tMerging the overlapping coords from chimeric read pairs and chimeric clipped reads',time.ctime().split(" ")[-2])
@@ -427,7 +425,7 @@ def CombiningClippWithChimericReads(Sample, clippedwithpseudogeneoverlap, Pseudo
                                     clippedlist.append(repr(cline.rstrip())) # Append the entire row from both the chimread evidence and the clippedread evidence if we found them, if we did not detect them we can print them seperately as the final results 
                                     chimlist.append(repr(chimline.rstrip()))
                                     DetectedPseudogenesList.append(pseudogene)
-                                elif chimfusstartright == "NA" and (int(chimfusstartleft) - 100) <= cfusionstart <= (int(chimfusendleft) + 100): # We dont have the right anchor and the clipp is within the left anchor or 100 plus or minus from the left anchor
+                                elif chimfusstartright == "NA" and (int(chimfusstartleft) - chimreadpairdistance) <= cfusionstart <= (int(chimfusendleft) + chimreadpairdistance): # We dont have the right anchor and the clipp is within the left anchor or 100 plus or minus from the left anchor by default
                                     print "Do we ever reach?"
                                     print >> out, chimline +"\t"+ cfusionchrom + "\t" + str(cfusionstart) + "\t" + str(cfusionend)  + "\t" + cfusiondepth
                                     clippedlist.append(repr(cline.rstrip()))
@@ -455,7 +453,7 @@ def CombiningClippWithChimericReads(Sample, clippedwithpseudogeneoverlap, Pseudo
     return (clipandchimevidence, DetectedPseudogenesList)
 
 
-def Pseuodogenecandidates(Sample,baminput,exoncoords, pseudogenecoords,chrominfo,genecoords,Cleaninglist, MovingList,Outputfolder):
+def Pseuodogenecandidates(Sample,baminput,exoncoords, pseudogenecoords,chrominfo,genecoords,Cleaninglist, MovingList,Outputfolder,Psdepth):
     '''
     Extract reads that are split across exons, These are my pseudogene candidates  
     '''
@@ -478,7 +476,7 @@ def Pseuodogenecandidates(Sample,baminput,exoncoords, pseudogenecoords,chrominfo
     logging.info('%s\tLooking for pseudogene Candidates', time.ctime().split(" ")[-2])
     logging.info('%s\tCalculating coverage over spliced alignment, filt 5 depth', time.ctime().split(" ")[-2])
     # Create a bed file by using genomecov for having a treshold in mapped reads! For obtaining pseudogene candidates
-    commandgenomecovforsplittranscriptreads = "genomeCoverageBed -ibam %s -g %s -bg -split | awk '($4>5){print $1\"\t\"$2\"\t\"$3}' > %s" %(Cigarbam, chrominfo,Cigarbed) # Atleast 5 in coverage 
+    commandgenomecovforsplittranscriptreads = "genomeCoverageBed -ibam %s -g %s -bg -split | awk '($4>%s){print $1\"\t\"$2\"\t\"$3}' > %s" %(Cigarbam, chrominfo,Psdepth,Cigarbed) # Atleast 5 in coverage 
     os.system(commandgenomecovforsplittranscriptreads) 
     logging.info('%s\tExtracting pseudogene candidates', time.ctime().split(" ")[-2])
     commandoverlappwithknowngenes = "intersectBed -wb -a %s -b %s -split | cut -f 7 | sort -n | uniq | cut -f 2- -d \"-\" | sort -n | uniq -c | sed -e 's/^[ \t]*//' | awk '$1 > 2 {print $2}' > %s" % (Cigarbed,exoncoords, Pseudogenecandidates) 
@@ -792,19 +790,19 @@ def cleaning(Cleaninglist, MovingList,Outputfolder):
             except OSError: 
                 pass 
 
-def main(baminput,Sample):
+def main(baminput,Sample, Psdepth,insdistance,ChimPairDepthTresh,ChimPairBinningTresh,ChimReadDepthTresh, ChimReadBinningTresh,chimreadpairdistance):
     # Create the logger
     logging.basicConfig(level=logging.INFO)
     logging.info('%s\tStarting Ppsyfinder', time.ctime())
     (chrominfo,genecoords,pseudogenecoords,exoncoords,anndb,annovarscript,Cleaninglist,MovingList,Outputfolder)=database(baminput,Sample)
-    (Pseudogenecandidatesbed,Cigarbam)=Pseuodogenecandidates(Sample,baminput,exoncoords,pseudogenecoords,chrominfo,genecoords,Cleaninglist, MovingList,Outputfolder)
-    bamChimericPairs=extractingchimericReads(Sample, baminput, Cleaninglist, MovingList)
-    PseudogeneCandidateChimbed=ChimericReadsOverlapwithPseudogeneCandidates(Sample, bamChimericPairs,Pseudogenecandidatesbed, Cleaninglist, MovingList)
+    (Pseudogenecandidatesbed,Cigarbam)=Pseuodogenecandidates(Sample,baminput,exoncoords,pseudogenecoords,chrominfo,genecoords,Cleaninglist, MovingList,Outputfolder,Psdepth)
+    bamChimericPairs=extractingchimericReads(Sample, baminput, Cleaninglist, MovingList,insdistance)
+    PseudogeneCandidateChimbed=ChimericReadsOverlapwithPseudogeneCandidates(Sample, bamChimericPairs,Pseudogenecandidatesbed, Cleaninglist, MovingList,ChimPairDepthTresh,ChimPairBinningTresh)
     bamClipped=extractingClipped(Sample,baminput, Cleaninglist,MovingList) 
     clippedbed=ClippedBamtoCoord(bamClipped,Cleaninglist, MovingList)
-    clippedmapping=clippedreadbinning(clippedbed,Cleaninglist, MovingList)
+    clippedmapping=clippedreadbinning(clippedbed,Cleaninglist, MovingList,ChimReadDepthTresh,ChimReadBinningTresh)
     clippedwithpseudogeneoverlap=intersectClippedPseudogeneCandidates(Sample, clippedmapping, Pseudogenecandidatesbed, Cleaninglist, MovingList)
-    (clipandchimevidence, DetectedPseudogenesList)=CombiningClippWithChimericReads(Sample, clippedwithpseudogeneoverlap, PseudogeneCandidateChimbed, Cleaninglist, MovingList)
+    (clipandchimevidence, DetectedPseudogenesList)=CombiningClippWithChimericReads(Sample, clippedwithpseudogeneoverlap, PseudogeneCandidateChimbed, Cleaninglist, MovingList,chimreadpairdistance)
     CountKnownPseudogenes(Sample,baminput,pseudogenecoords, MovingList)
     AnnotateFusionPointWithAnnovar(Sample,clipandchimevidence,anndb,annovarscript,Cleaninglist,MovingList)
     makeCircosGraph(Sample,baminput,Cigarbam,clipandchimevidence,exoncoords,chrominfo,DetectedPseudogenesList, Cleaninglist, MovingList)
@@ -814,4 +812,4 @@ def main(baminput,Sample):
 
 if __name__=='__main__':
   arguments=parseArgs()
-  main(arguments.baminput, arguments.Sample)
+  main(arguments.baminput, arguments.Sample, arguments.Psdepth, arguments.insdistance,arguments.ChimPairDepthTresh,arguments.ChimPairBinningTresh,arguments.ChimReadDepthTresh,arguments.ChimReadBinningTresh, arguments.chimreadpairdistance)
