@@ -7,9 +7,9 @@ For testing the master scripts, creates structural rearangements based on users 
 
 
 Dependencies:
-Annovar
-? awk
-Bedtools
+Annovar 
+? awk 
+Bedtools 
 ? Circos 
 Samtools 
 
