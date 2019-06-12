@@ -7,10 +7,10 @@ For testing the master scripts, creates structural rearangements based on users 
 
 
 Dependencies: 
-Annovar 
-? awk 
-Bedtools 
-? Circos  
+Annovar  
+? awk  
+Bedtools  
+? Circos   
 Samtools  
 
 Python modules (2.7): 
