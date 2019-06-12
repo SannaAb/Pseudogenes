@@ -6,16 +6,12 @@ InsertingTranscriptsandCreatingStructuralVariants.py
 For testing the master scripts, creates structural rearangements based on users request. 
 
 
-Dependencies:
-Annovar
-
+Dependencies: 
+Annovar 
 ? awk 
-
 Bedtools 
-
-? Circos 
-
-Samtools 
+? Circos  
+Samtools  
 
 Python modules (2.7): 
 sys
