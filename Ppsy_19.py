@@ -428,7 +428,6 @@ def CombiningClippWithChimericReads(Sample, clippedwithpseudogeneoverlap, Pseudo
                                     chimlist.append(repr(chimline.rstrip()))
                                     DetectedPseudogenesList.append(pseudogene)
                                 elif chimfusstartright == "NA" and (int(chimfusstartleft) - chimreadpairdistance) <= cfusionstart <= (int(chimfusendleft) + chimreadpairdistance): # We dont have the right anchor and the clipp is within the left anchor or 100 plus or minus from the left anchor by default
-                                    print "Do we ever reach?"
                                     print >> out, chimline +"\t"+ cfusionchrom + "\t" + str(cfusionstart) + "\t" + str(cfusionend)  + "\t" + cfusiondepth
                                     clippedlist.append(repr(cline.rstrip()))
                                     chimlist.append(repr(chimline.rstrip()))
@@ -812,10 +811,12 @@ dev.off()
             """ %(startvector,endvector, baminput,Cigarbam ,parentchrom, parentchrom,fuschrom,parentchrom,parentgene,fusionstartplot,fusionwidth,Anno,fuschrom,Anno ,outputPicturepdf,parentgenestart,parentgeneend,fusionrangestart,fusionrangeend,outputPicturepng,parentgenestart,parentgeneend,fusionrangestart,fusionrangeend)
 
             command = "Rscript %s" %outputRscript # This part plots using the Gviz plotting
-            print command
             os.system(command)
-
-
+            # Cleaning up the outputs
+            MovingList.append(outputPicturepdf)
+            MovingList.append(outputPicturepng)
+            MovingList.append(outputRscript)
+            
 def AnnotateFusionPointWithAnnovar(Sample,clipandchimevidence,anndb,annovarscript,Cleaninglist,MovingList): 
     '''
     Here we annotate the fusion point with annovar, using the absolute start position for the fusion range. 
@@ -876,6 +877,25 @@ def cleaning(Cleaninglist, MovingList,Outputfolder):
                 os.rename(Outputfolder+"/"+f, alignmentout+"/"+f)
             except OSError: 
                 pass 
+    # Gviz 
+    GvizOut  = "%s/Plotting" %Outputfolder
+    os.makedirs(GvizOut)
+    Rscriptout = GvizOut + "/Scripts"
+    os.makedirs(Rscriptout)
+    covplots =  [f for f in os.listdir(Outputfolder) if f.endswith((".png", ".pdf"))]
+    if covplots: 
+        for f in covplots:
+            try:
+                os.rename(Outputfolder+"/"+f, GvizOut+"/"+f)
+            except OSError:
+                pass
+    Rscripts =  [f for f in os.listdir(Outputfolder) if f.endswith(".R")]
+    if Rscripts: 
+        for f in Rscripts: 
+            try: 
+                os.rename(Outputfolder+"/"+f, Rscriptout+"/"+f)
+            except OSError: 
+                pass
     # Circos
     Circosout = "%s/Circos" %Outputfolder
     os.makedirs(Circosout)
