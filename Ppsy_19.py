@@ -50,6 +50,8 @@ import logging
  
 #  12/6 obs! The next anchor for the chim pairs might be 5000 nucl away within the same gene
 
+# 17/6 this part plots using GVIZ instead 
+
 def parseArgs():
     parser = argparse.ArgumentParser(description='Detects processed pseudogenes by looking at DNA data that splits across the splice junctions')
     parser.add_argument('-I', dest='baminput',help='Bamfile containing alignment performed by a splice aware aligner, need index in the same folder (required)',required=True)
@@ -84,7 +86,6 @@ def database(baminput,Sample):
                 chrom  = line.split("\t")[1].split(":")[-1]
                 size = line.split("\t")[2].split(":")[-1]
                 print >> chromout, chrom +"\t"+ str(size)
-
     # Annovar Databases
     anndb = "/apps/bio/apps/annovar/20150322/humandb"
     annovarscript = "/apps/bio/apps/annovar/20150322/annotate_variation.pl"
@@ -134,6 +135,7 @@ def ChimericReadsOverlapwithPseudogeneCandidates(Sample, bamChimericPairs,Pseudo
     '''
     logging.info('%s\tLooking for an overlap between chimeric reads and Pseudogenes candidates',time.ctime().split(" ")[-2])
     PseudogeneCandidateChimbed = Sample + ".ChimericPairs_AmountOfReads.bed"
+    Cleaninglist.append(PseudogeneCandidateChimbed)
     samchimpericPairs = pysam.AlignmentFile(bamChimericPairs, 'rb')
     with open(PseudogeneCandidateChimbed, "w") as out: 
         with open(Pseudogenecandidatesbed, "r") as pseudogenecandidatesbedf: 
@@ -698,7 +700,122 @@ max=%s
                     command = "convert -size 1500x1500 -gravity Center -pointsize 70 -annotate 0 \"%s -> %s:%s\\n\\n ChimReads:%s\\n\\n ChimPairs:%s\" %s %s" %(i,chromFusion,startFusion,chimreadsdepth,chimpairsdepth,outputpicture, CircosPictureWithAnno)
                     os.system(command)
                     MovingList.append(CircosPictureWithAnno)    
-            
+    
+
+def GvizPlottingForOutput(Sample,baminput,Cigarbam,summaryOutAnnotatedBoth,exoncoords,Cleaninglist,MovingList):
+    """
+    This part plots the outputs using the gviz package in R instead of circos
+    """
+    logging.info('%s\tPlottingTheDetectedPseudogeneCandidates',time.ctime().split(" ")[-2])
+    #bamfile=baminput
+    #cigarbamfile=Cigarbam
+    #outputReport=summaryOutAnnotatedBoth
+    #exoncoordsdb = exoncoords
+    with open(summaryOutAnnotatedBoth, "r") as finaloutputreport: 
+        h=next(finaloutputreport)
+        exoncoordsdict = {}
+        for line in finaloutputreport:
+            estarts = []
+            eends = []
+            line = line.strip()
+            parentgene = line.split("\t")[0]
+            parentchrom = line.split("\t")[1]
+            parentgenestart = line.split("\t")[2]
+            parentgeneend = line.split("\t")[3]
+            if not line.split("\t")[4] == "NA":
+                fuschrom  = line.split("\t")[4]
+            else: # We only have evidence in the clip therefore you need to extract it from column 12
+                fuschrom  = line.split("\t")[12]
+            fusstartleft = line.split("\t")[5] 
+            fusendleft = line.split("\t")[6]
+            fusstartright = line.split("\t")[9]
+            fusendright =  line.split("\t")[10]
+            chimreadstart = line.split("\t")[13]
+            chimreadend = line.split("\t")[14]
+            Anno = line.split("\t")[16]+"_"+line.split("\t")[17] 
+            command = "grep -w %s %s" %(parentgene,exoncoords)
+            a=subprocess.Popen(command, stdout=subprocess.PIPE, shell=True)
+            for excord in a.stdout:
+                excord=excord.strip()
+                exonchrom = excord.split("\t")[0]
+                exonstart = int(excord.split("\t")[1])
+                exonend = int(excord.split("\t")[2])
+                estarts.append(exonstart)
+                eends.append(exonend)
+            if not parentgene in exoncoordsdict.keys(): 
+                exoncoordsdict[parentgene]=(estarts,eends)
+            else: 
+                continue
+            if not chimreadstart == "NA": 
+                outputname = "%s_%swithin%s-%s" %(Sample,parentgene,fuschrom,chimreadstart)
+                fusionstartplot = chimreadstart # When you have the clipp coord use them for the plotting
+                fusionwidth = int(chimreadend)-int(chimreadstart)
+                fusionrangestart = int(chimreadstart)-100
+                fusionrangeend = int(chimreadstart)+100
+            else: 
+                outputname = "%s_%swithin%s-%s" %(Sample,parentgene,fuschrom,fusstartleft)
+                if fusstartright == "NA": # You only have the left anchor, use those for the plotting
+                    fusionstartplot = fusstartleft
+                    fusionwidth = int(fusendleft) - int(fusstartleft)                
+                    fusionrangestart = int(fusstartleft)-100 
+                    fusionrangeend = int(fusendleft)+100
+                else: # You have the entire anchor rang , use that for the plotting 
+                    fusionstartplot = fusstartleft
+                    fusionwidth = int(fusendright)-int(fusstartleft)
+                    fusionrangestart = int(fusstartleft)-100
+                    fusionrangeend = int(fusendright)+100
+            outputRscript = outputname + ".R"
+            outputPicturepdf = outputname + ".pdf" 
+            outputPicturepng = outputname + ".png" # png for having in the ppsy reports
+            with open(outputRscript, "w") as R:             
+                startvector= "starts=c("+','.join(str(e) for e in exoncoordsdict[parentgene][0]) + ")"
+                endvector= "ends=c("+','.join(str(e) for e in exoncoordsdict[parentgene][1]) + ")"          
+                print >> R, """
+#!/usr/bin/R  
+suppressMessages(library(Gviz))
+options(ucscChromosomeNames=FALSE)
+axisTrack <- GenomeAxisTrack()              
+%s 
+%s
+widths=ends-starts
+bamfile <- '%s'
+cigarbamfile <- '%s'
+# AlignmentTracks 
+alTrack <- DataTrack(range=bamfile, genome = "hg19", name = "Raw Coverage",  type="heatmap",chromosome="%s")
+alTrack2 <- AlignmentsTrack(cigarbamfile,chromosome="%s",genome="hg19",name="Splice Coverage", isPaired=TRUE)
+bamzoominsert<-DataTrack(range=bamfile, genome = "hg19", name = "Insert Coverage",  type="histogram", chromosome="%s")
+# AnnotationTracks 
+aTrack.groups <- AnnotationTrack(start=c(starts), width=c(widths),chromosome="%s", strand=rep("*",length(starts)),group=rep("%s",length(starts)), genome = "hg19", name = "Anno")
+AnnotationTrackinsert<-AnnotationTrack(start=%s, width = %s, strand="*",shape="box",id="%s",genome="hg19", chromosome="%s",name ="Insert", group = "%s")
+
+pdf("%s") 
+grid.newpage()
+pushViewport(viewport(layout=grid.layout(4, 6)))
+pushViewport(viewport(layout.pos.col=c(1,2,3,4,5,6), layout.pos.row=c(1,2)))
+plotTracks(list(axisTrack,alTrack,alTrack2,aTrack.groups), groupAnnotation="group", just.group=\"above\",from=%s,to=%s,type=c("heatmap","coverage"), sizes=c(1,2,3,0.5),fill.coverage=\"grey\",add=TRUE)
+popViewport(1) 
+pushViewport(viewport(layout.pos.col=c(2.5,5.5), layout.pos.row=4))
+plotTracks(c(bamzoominsert,AnnotationTrackinsert,axisTrack), from=%s,to=%s, fill="darkred", sizes =c(0.5,0.1,0.5), lwd = 1, add=TRUE, panel.only=TRUE, legend=TRUE, groupAnnotation = "id", fill.histogram="darkgrey")    
+dev.off()
+
+png("%s") 
+grid.newpage()
+pushViewport(viewport(layout=grid.layout(4, 6)))
+pushViewport(viewport(layout.pos.col=c(1,2,3,4,5,6), layout.pos.row=c(1,2)))
+plotTracks(list(axisTrack,alTrack,alTrack2,aTrack.groups), groupAnnotation="group", just.group=\"above\",from=%s,to=%s,type=c("heatmap","coverage"), sizes=c(1,2,3,0.5),fill.coverage=\"grey\",add=TRUE)
+popViewport(1) 
+pushViewport(viewport(layout.pos.col=c(2.5,5.5), layout.pos.row=4))
+plotTracks(c(bamzoominsert,AnnotationTrackinsert,axisTrack), from=%s,to=%s, fill="darkred", sizes =c(0.5,0.1,0.5), lwd = 1, add=TRUE, panel.only=TRUE, legend=TRUE, groupAnnotation = "id", fill.histogram="darkgrey")    
+dev.off()
+
+
+            """ %(startvector,endvector, baminput,Cigarbam ,parentchrom, parentchrom,fuschrom,parentchrom,parentgene,fusionstartplot,fusionwidth,Anno,fuschrom,Anno ,outputPicturepdf,parentgenestart,parentgeneend,fusionrangestart,fusionrangeend,outputPicturepng,parentgenestart,parentgeneend,fusionrangestart,fusionrangeend)
+
+            command = "Rscript %s" %outputRscript # This part plots using the Gviz plotting
+            print command
+            os.system(command)
+
+
 def AnnotateFusionPointWithAnnovar(Sample,clipandchimevidence,anndb,annovarscript,Cleaninglist,MovingList): 
     '''
     Here we annotate the fusion point with annovar, using the absolute start position for the fusion range. 
@@ -734,8 +851,9 @@ def AnnotateFusionPointWithAnnovar(Sample,clipandchimevidence,anndb,annovarscrip
                         ExactAnno = strippedannovar.split("\t")[1]
                         print >> copyexactcoord, stripped + "\t" + info + "\t" + ExactAnno
                 for filename in glob.glob(outtmp+"*"):
-                    os.remove(filename)
-    
+                    os.remove(filename)    
+    return summaryOutAnnotatedBoth
+
 def cleaning(Cleaninglist, MovingList,Outputfolder):
     # Itererating for files to be removed
     logging.info('%s\tCleaning',time.ctime().split(" ")[-2])
@@ -804,8 +922,9 @@ def main(baminput,Sample, Psdepth,insdistance,ChimPairDepthTresh,ChimPairBinning
     clippedwithpseudogeneoverlap=intersectClippedPseudogeneCandidates(Sample, clippedmapping, Pseudogenecandidatesbed, Cleaninglist, MovingList)
     (clipandchimevidence, DetectedPseudogenesList)=CombiningClippWithChimericReads(Sample, clippedwithpseudogeneoverlap, PseudogeneCandidateChimbed, Cleaninglist, MovingList,chimreadpairdistance)
     CountKnownPseudogenes(Sample,baminput,pseudogenecoords, MovingList)
-    AnnotateFusionPointWithAnnovar(Sample,clipandchimevidence,anndb,annovarscript,Cleaninglist,MovingList)
-    makeCircosGraph(Sample,baminput,Cigarbam,clipandchimevidence,exoncoords,chrominfo,DetectedPseudogenesList, Cleaninglist, MovingList)
+    summaryOutAnnotatedBoth=AnnotateFusionPointWithAnnovar(Sample,clipandchimevidence,anndb,annovarscript,Cleaninglist,MovingList)
+    GvizPlottingForOutput(Sample,baminput,Cigarbam,summaryOutAnnotatedBoth,exoncoords,Cleaninglist,MovingList)
+    #makeCircosGraph(Sample,baminput,Cigarbam,clipandchimevidence,exoncoords,chrominfo,DetectedPseudogenesList, Cleaninglist, MovingList)
     cleaning(Cleaninglist, MovingList,Outputfolder)
     logging.info('%s\tPpsy Finished, results in output folder',time.ctime().split(" ")[-2])
 
