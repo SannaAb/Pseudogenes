@@ -8,6 +8,12 @@ Processed pseudogenes are structures that are reintroduced into the genome by re
 ## Structure  
 The Ppsy finder consists of two scripts, the Ppsy.py scripts that is the pipeline itself and the script Makeppsyreport.py that outputs a html report for your samples, the results have evidence from both chimeric reads and chimeric pairs. 
 
+## Installation
+
+The easieset way of installing the dependencies are to use conda. 
+
+conda create -n PPsy 
+
 ## Dependencies 
 
 The script is written in python2.7, tools required are:  
