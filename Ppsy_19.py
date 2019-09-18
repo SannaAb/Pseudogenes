@@ -38,16 +38,50 @@ def parseArgs():
     arguments=parser.parse_args(sys.argv[1:])
     return arguments
 
-def database(baminput,Sample): 
-    #baminput = sys.argv[1] 
-    #Sample = sys.argv[2]
-    chrominfo = Sample + ".ChromInfo_SortingOrder.txt"
-    logging.info('%s\tInput Alignment %s', time.ctime().split(" ")[-2],baminput)
+
+def database(Sample): 
+    """
+    This part reads the databases that is used for input 
+    """
     logging.info('%s\tReading the database files', time.ctime().split(" ")[-2])
     genecoords="/jumbo/WorkingDir/B17-006/PseudoScriptDb/VersionAnnotationrefgene/Gene_coord_hg19_refgene.bed"
     pseudogenecoords="/jumbo/WorkingDir/B17-006/PseudoScriptDb/KnownProcessedPseudogenes_Homo_sapiens.GRCh37.75_CHR.bed"
     exoncoords="/jumbo/WorkingDir/B17-006/PseudoScriptDb/VersionAnnotationrefgene/Exon_coord_hg19_refgene.bed" # This one wont contain overlapping Coords!
-    # Creating chrominfo database for your Alignment file
+    return(genecoords,pseudogenecoords,exoncoords)
+
+def CreatingOutputDir(Sample):
+    """
+    This Part creates the output folder together with the cleaning lists 
+    """
+    logging.info('%s\tSetting Up Outputdir', time.ctime().split(" ")[-2])
+    Outputfolder=Sample + "_PPsyOut"
+    command = "mkdir -p %s" % Outputfolder
+    os.system(command)
+    # List for cleaning and moving files
+    Cleaninglist=[]
+    MovingList = []
+    return(Cleaninglist, MovingList,Outputfolder)
+
+def AlignmentWithSTAR(Fastq1,Fastq2,STARindex,Sample,Outputfolder): 
+    """
+    This function is only run if you dont have the alignment file so this part runs STAR, the Issue here is that we cannot run this in multicore while the other is single core, this is why it is preferable to have the Alignmentfile with star already done  
+    """
+    # You need to have STAR in your path for this 
+
+    logging.info('%s\tAlignment using STAR... This step might be very slow', time.ctime().split(" ")[-2])
+    baminput = Outputfolder +"/"+ Sample + "Aligned.sortedByCoord.out.bam"
+    command = "STAR --runThreadN 2 --genomeDir %s --chimOutType WithinBAM --outSAMunmapped Within --outFilterMultimapNmax 20 --chimSegmentMin 20 -readFilesIn %s %s --outSAMtype BAM SortedByCoordinate --outFileNamePrefix %s/%s" %(STARindex,Fastq1,Fastq2,Outputfolder,Sample)
+    os.system(command)
+    command = "samtools index %s" baminput
+    os.system(command)
+    return(baminput)
+
+def CreateTheChromosomeInfoFile(baminput,Sample,Cleaninglist):
+    """
+    This extract the chromsome info file from the input 
+    """
+    logging.info('%s\tCreating Chromsome Info File', time.ctime().split(" ")[-2])
+    chrominfo = Sample + ".ChromInfo_SortingOrder.txt"    
     command = "samtools view %s -H" % baminput 
     a = subprocess.Popen(command, stdout=subprocess.PIPE, shell=True)
     with open(chrominfo, "w") as chromout: 
@@ -57,16 +91,10 @@ def database(baminput,Sample):
                 chrom  = line.split("\t")[1].split(":")[-1]
                 size = line.split("\t")[2].split(":")[-1]
                 print >> chromout, chrom +"\t"+ str(size)
-    # Lists for cleaning and moving the files    
-    Cleaninglist=[]
     Cleaninglist.append(chrominfo)
-    # Append to cleaning the chromosome info 
-    MovingList = [] 
-    Outputfolder=Sample + "_PPsyOut"
-    command = "mkdir -p %s" % Outputfolder 
-    os.system(command)
-    return (chrominfo,genecoords,pseudogenecoords,exoncoords,Cleaninglist, MovingList, Outputfolder) 
+    return chrominfo
     
+
 def extractingClipped(Sample,baminput, Cleaninglist,MovingList):
     '''
     Softclipped reads are extracted and saved to a new bamfile
@@ -425,9 +453,7 @@ def Pseuodogenecandidates(Sample,baminput,exoncoords, pseudogenecoords,chrominfo
     '''
     Extract reads that are split across exons, These are my pseudogene candidates  
     '''
-    
     # Files
-
     Cigarbam = Sample + ".extractedN.bam"
     MovingList.append(Cigarbam)
     Cigarbai = Sample + ".extractedN.bam.bai"
@@ -500,7 +526,7 @@ def GvizPlottingForOutput(Sample,baminput,Cigarbam,summaryOutAnnotatedBoth,exonc
     """
     This part plots the outputs using the gviz package in R instead of circos
     """
-    logging.info('%s\tPlottingTheDetectedPseudogeneCandidates',time.ctime().split(" ")[-2])
+    logging.info('%s\tPlotting The Detected PseudogeneCandidates using GVIZ',time.ctime().split(" ")[-2])
     #bamfile=baminput
     #cigarbamfile=Cigarbam
     #outputReport=summaryOutAnnotatedBoth
@@ -588,7 +614,7 @@ plotTracks(list(axisTrack,alTrack,alTrack2,aTrack.groups), groupAnnotation="grou
 popViewport(1) 
 pushViewport(viewport(layout.pos.col=c(2.5,5.5), layout.pos.row=4))
 plotTracks(c(bamzoominsert,AnnotationTrackinsert,axisTrack), from=%s,to=%s, fill="darkred", sizes =c(0.5,0.1,0.5), lwd = 1, add=TRUE, panel.only=TRUE, legend=TRUE, groupAnnotation = "id", fill.histogram="darkgrey")    
-dev.off()
+shhh<-dev.off()
             """ %(startvector,endvector, baminput,Cigarbam ,parentchrom, parentchrom,fuschrom,parentchrom,parentgene,fusionstartplot,fusionwidth,Anno,fuschrom,Anno ,outputPicturepdf,parentgenestart,parentgeneend,fusionrangestart,fusionrangeend)
 
             command = "Rscript %s" %outputRscript # This part plots using the Gviz plotting
