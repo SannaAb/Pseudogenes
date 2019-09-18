@@ -70,10 +70,11 @@ def AlignmentWithSTAR(Fastq1,Fastq2,STARindex,Sample,Outputfolder):
 
     logging.info('%s\tAlignment using STAR... This step might be very slow', time.ctime().split(" ")[-2])
     baminput = Outputfolder +"/"+ Sample + "Aligned.sortedByCoord.out.bam"
-    command = "STAR --runThreadN 2 --genomeDir %s --chimOutType WithinBAM --outSAMunmapped Within --outFilterMultimapNmax 20 --chimSegmentMin 20 -readFilesIn %s %s --outSAMtype BAM SortedByCoordinate --outFileNamePrefix %s/%s" %(STARindex,Fastq1,Fastq2,Outputfolder,Sample)
+    command = "STAR --runThreadN 1 --genomeDir %s --chimOutType WithinBAM --outSAMunmapped Within --outFilterMultimapNmax 20 --chimSegmentMin 20 --readFilesIn %s %s --outSAMtype BAM SortedByCoordinate --outFileNamePrefix %s/%s" %(STARindex,Fastq1,Fastq2,Outputfolder,Sample)
     os.system(command)
-    command = "samtools index %s" baminput
+    command = "samtools index %s" %baminput
     os.system(command)
+
     return(baminput)
 
 def CreateTheChromosomeInfoFile(baminput,Sample,Cleaninglist):
@@ -520,8 +521,6 @@ def CountKnownPseudogenes(Sample,baminput,pseudogenecoords, MovingList):
         for key, values in DictWithPostAndAmountsOfReads.iteritems():
             out.write(key + "\t" + '\t'.join(values) + "\n")
 
-
-
 def GvizPlottingForOutput(Sample,baminput,Cigarbam,summaryOutAnnotatedBoth,exoncoords,Cleaninglist,MovingList):
     """
     This part plots the outputs using the gviz package in R instead of circos
@@ -744,7 +743,9 @@ def mainBam(baminput,Sample, Psdepth,insdistance,ChimPairDepthTresh,ChimPairBinn
     logging.basicConfig(level=logging.INFO)
     start = time.time()
     logging.info('%s\tStarting Ppsyfinder', time.ctime())
-    (chrominfo,genecoords,pseudogenecoords,exoncoords,Cleaninglist,MovingList,Outputfolder)=database(baminput,Sample)
+    (genecoords,pseudogenecoords,exoncoords)=database(Sample)
+    (Cleaninglist, MovingList,Outputfolder)=CreatingOutputDir(Sample)
+    chrominfo=CreateTheChromosomeInfoFile(baminput,Sample,Cleaninglist)
     (Pseudogenecandidatesbed,Cigarbam)=Pseuodogenecandidates(Sample,baminput,exoncoords,pseudogenecoords,chrominfo,genecoords,Cleaninglist, MovingList,Outputfolder,Psdepth)
     bamChimericPairs=extractingchimericReads(Sample, baminput, Cleaninglist, MovingList,insdistance)
     PseudogeneCandidateChimbed=ChimericReadsOverlapwithPseudogeneCandidates(Sample, bamChimericPairs,Pseudogenecandidatesbed, Cleaninglist, MovingList,ChimPairDepthTresh,ChimPairBinningTresh)
@@ -771,8 +772,11 @@ def mainFastq(Fastq1,Fastq2,STARindex,Sample, Psdepth,insdistance,ChimPairDepthT
     process = psutil.Process(os.getpid())
     logging.basicConfig(level=logging.INFO)
     start = time.time()
-    logging.info('%s\tStarting Ppsyfinder', time.ctime())
-    (chrominfo,genecoords,pseudogenecoords,exoncoords,Cleaninglist,MovingList,Outputfolder)=database(baminput,Sample)
+    logging.info('%s\tStarting Ppsyfinder, including The Alignment', time.ctime())
+    (genecoords,pseudogenecoords,exoncoords)=database(Sample)
+    (Cleaninglist, MovingList,Outputfolder)=CreatingOutputDir(Sample)
+    baminput=AlignmentWithSTAR(Fastq1,Fastq2,STARindex,Sample,Outputfolder)
+    chrominfo=CreateTheChromosomeInfoFile(baminput,Sample,Cleaninglist)
     (Pseudogenecandidatesbed,Cigarbam)=Pseuodogenecandidates(Sample,baminput,exoncoords,pseudogenecoords,chrominfo,genecoords,Cleaninglist, MovingList,Outputfolder,Psdepth)
     bamChimericPairs=extractingchimericReads(Sample, baminput, Cleaninglist, MovingList,insdistance)
     PseudogeneCandidateChimbed=ChimericReadsOverlapwithPseudogeneCandidates(Sample, bamChimericPairs,Pseudogenecandidatesbed, Cleaninglist, MovingList,ChimPairDepthTresh,ChimPairBinningTresh)
