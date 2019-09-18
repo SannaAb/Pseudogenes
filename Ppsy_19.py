@@ -16,6 +16,8 @@ import time
 import argparse
 import logging
 
+import psutil
+
 
 # Idea: 
 # Extract Split reads CigarNs, Intersect with genes? Pseudogene Candidates!
@@ -743,8 +745,6 @@ def GvizPlottingForOutput(Sample,baminput,Cigarbam,summaryOutAnnotatedBoth,exonc
                 eends.append(exonend)
             if not parentgene in exoncoordsdict.keys(): 
                 exoncoordsdict[parentgene]=(estarts,eends)
-            else: 
-                continue
             if not chimreadstart == "NA": 
                 outputname = "%s_%swithin%s-%s" %(Sample,parentgene,fuschrom,chimreadstart)
                 fusionstartplot = chimreadstart # When you have the clipp coord use them for the plotting
@@ -765,7 +765,7 @@ def GvizPlottingForOutput(Sample,baminput,Cigarbam,summaryOutAnnotatedBoth,exonc
                     fusionrangeend = int(fusendright)+100
             outputRscript = outputname + ".R"
             outputPicturepdf = outputname + ".pdf" 
-            outputPicturepng = outputname + ".png" # png for having in the ppsy reports
+            outputPicturepng = outputname + ".png" # png for having in the ppsy reports, cannot create them at the nodes so you need to do it with a seperate command
             with open(outputRscript, "w") as R:             
                 startvector= "starts=c("+','.join(str(e) for e in exoncoordsdict[parentgene][0]) + ")"
                 endvector= "ends=c("+','.join(str(e) for e in exoncoordsdict[parentgene][1]) + ")"          
@@ -796,28 +796,19 @@ popViewport(1)
 pushViewport(viewport(layout.pos.col=c(2.5,5.5), layout.pos.row=4))
 plotTracks(c(bamzoominsert,AnnotationTrackinsert,axisTrack), from=%s,to=%s, fill="darkred", sizes =c(0.5,0.1,0.5), lwd = 1, add=TRUE, panel.only=TRUE, legend=TRUE, groupAnnotation = "id", fill.histogram="darkgrey")    
 dev.off()
-
-png("%s") 
-grid.newpage()
-pushViewport(viewport(layout=grid.layout(4, 6)))
-pushViewport(viewport(layout.pos.col=c(1,2,3,4,5,6), layout.pos.row=c(1,2)))
-plotTracks(list(axisTrack,alTrack,alTrack2,aTrack.groups), groupAnnotation="group", just.group=\"above\",from=%s,to=%s,type=c("heatmap","coverage"), sizes=c(1,2,3,0.5),fill.coverage=\"grey\",add=TRUE)
-popViewport(1) 
-pushViewport(viewport(layout.pos.col=c(2.5,5.5), layout.pos.row=4))
-plotTracks(c(bamzoominsert,AnnotationTrackinsert,axisTrack), from=%s,to=%s, fill="darkred", sizes =c(0.5,0.1,0.5), lwd = 1, add=TRUE, panel.only=TRUE, legend=TRUE, groupAnnotation = "id", fill.histogram="darkgrey")    
-dev.off()
-
-
-            """ %(startvector,endvector, baminput,Cigarbam ,parentchrom, parentchrom,fuschrom,parentchrom,parentgene,fusionstartplot,fusionwidth,Anno,fuschrom,Anno ,outputPicturepdf,parentgenestart,parentgeneend,fusionrangestart,fusionrangeend,outputPicturepng,parentgenestart,parentgeneend,fusionrangestart,fusionrangeend)
+            """ %(startvector,endvector, baminput,Cigarbam ,parentchrom, parentchrom,fuschrom,parentchrom,parentgene,fusionstartplot,fusionwidth,Anno,fuschrom,Anno ,outputPicturepdf,parentgenestart,parentgeneend,fusionrangestart,fusionrangeend)
 
             command = "Rscript %s" %outputRscript # This part plots using the Gviz plotting
             os.system(command)
             # Cleaning up the outputs
             MovingList.append(outputPicturepdf)
+            # Creating png does not work on the nodes, use the command convert instead for those ... 
+            command = "convert %s %s" %(outputPicturepdf, outputPicturepng)
+            os.system(command)
             MovingList.append(outputPicturepng)
             MovingList.append(outputRscript)
             
-def AnnotateFusionPointWithAnnovar(Sample,clipandchimevidence,anndb,annovarscript,Cleaninglist,MovingList): 
+def AnnotateFusionPointWithAnnovar(Sample,clipandchimevidence,exoncoords,genecoords,anndb,annovarscript,Cleaninglist,MovingList): 
     '''
     Here we annotate the fusion point with annovar, using the absolute start position for the fusion range. 
     '''
@@ -845,6 +836,33 @@ def AnnotateFusionPointWithAnnovar(Sample,clipandchimevidence,anndb,annovarscrip
                     print >> out, "%s\t%s\t%s\t0\t0" %(fuschr, fusstart,fusend)
                 commandRunAnnovar = "perl %s --geneanno --buildver hg19 %s %s -out %s.Annovar.txt" %(annovarscript, outtmp, anndb, outtmp)
                 os.system(commandRunAnnovar)
+                with open(genecoords, "r") as genecoordforinsertanno: # Here we use the gene coord first, if on gene coord is detected grep the exons with the same gene coord from the alignment 
+                    for l in genecoordforinsertanno:
+                        l = l.strip()
+                        genechrom = l.split("\t")[0]
+                        genestart = l.split("\t")[1]
+                        geneend = l.split("\t")[2]
+                        genename = l.split("\t")[3]
+                        if fuschr == genechrom and int(fusstart) >= int(genestart) and int(fusend) <= int(geneend):
+                            geneofinsert = genename
+                            command = "grep %s %s" % (genename,exoncoords)
+                            pipe = subprocess.Popen(command, shell=True, stdout = subprocess.PIPE)
+                            for exoncoordline in pipe.stdout: # If we have an insert in a gene we grep the exon coordinates 
+                                exoncoordline = exoncoordline.strip()
+                                exonchrom = exoncoordline.split("\t")[0] # I need to ad the exon chrom as an overlapp importance as well as i cannot grep exactly as the Gene coord is not exactly the same as the exon coords which have an id onto it. 
+                                exonstart = exoncoordline.split("\t")[1]
+                                exonend = exoncoordline.split("\t")[2]
+                                print exoncoordline
+                                if fuschr == exonchrom and int(fusstart) >= int(exonstart) and int(fusend) <= int(exonend):
+                                    geneinsertanno = "exonic"
+                                    break 
+                                else: 
+                                    geneinsertanno = "intronic"
+                            break 
+                        else: # No hit within the genecoord therefore it is intergenic
+                            geneofinsert = "NA"
+                            geneinsertanno = "intergenic"  
+                    print stripped + "\t" + geneinsertanno + "\t" + geneofinsert
                 with open(outtmp+".Annovar.txt.variant_function", "r") as variantfunction:
                     for lineannovar in variantfunction:
                         strippedannovar = lineannovar.strip()
@@ -930,7 +948,9 @@ def cleaning(Cleaninglist, MovingList,Outputfolder):
 
 def main(baminput,Sample, Psdepth,insdistance,ChimPairDepthTresh,ChimPairBinningTresh,ChimReadDepthTresh, ChimReadBinningTresh,chimreadpairdistance):
     # Create the logger
+    process = psutil.Process(os.getpid())
     logging.basicConfig(level=logging.INFO)
+    start = time.time()
     logging.info('%s\tStarting Ppsyfinder', time.ctime())
     (chrominfo,genecoords,pseudogenecoords,exoncoords,anndb,annovarscript,Cleaninglist,MovingList,Outputfolder)=database(baminput,Sample)
     (Pseudogenecandidatesbed,Cigarbam)=Pseuodogenecandidates(Sample,baminput,exoncoords,pseudogenecoords,chrominfo,genecoords,Cleaninglist, MovingList,Outputfolder,Psdepth)
@@ -942,12 +962,13 @@ def main(baminput,Sample, Psdepth,insdistance,ChimPairDepthTresh,ChimPairBinning
     clippedwithpseudogeneoverlap=intersectClippedPseudogeneCandidates(Sample, clippedmapping, Pseudogenecandidatesbed, Cleaninglist, MovingList)
     (clipandchimevidence, DetectedPseudogenesList)=CombiningClippWithChimericReads(Sample, clippedwithpseudogeneoverlap, PseudogeneCandidateChimbed, Cleaninglist, MovingList,chimreadpairdistance)
     CountKnownPseudogenes(Sample,baminput,pseudogenecoords, MovingList)
-    summaryOutAnnotatedBoth=AnnotateFusionPointWithAnnovar(Sample,clipandchimevidence,anndb,annovarscript,Cleaninglist,MovingList)
+    summaryOutAnnotatedBoth=AnnotateFusionPointWithAnnovar(Sample,clipandchimevidence,exoncoords,genecoords,anndb,annovarscript,Cleaninglist,MovingList)
     GvizPlottingForOutput(Sample,baminput,Cigarbam,summaryOutAnnotatedBoth,exoncoords,Cleaninglist,MovingList)
     #makeCircosGraph(Sample,baminput,Cigarbam,clipandchimevidence,exoncoords,chrominfo,DetectedPseudogenesList, Cleaninglist, MovingList)
     cleaning(Cleaninglist, MovingList,Outputfolder)
     logging.info('%s\tPpsy Finished, results in output folder',time.ctime().split(" ")[-2])
-
+    logging.info('Memory Consumed in Bytes:\t%s',(process.memory_info()[0]))
+    logging.info('RunTime in Sec:\t%s', int(time.time()-start))
 
 if __name__=='__main__':
   arguments=parseArgs()
