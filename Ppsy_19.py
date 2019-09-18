@@ -15,48 +15,18 @@ from collections import Counter
 import time
 import argparse
 import logging
-
 import psutil
-
-
-# Idea: 
-# Extract Split reads CigarNs, Intersect with genes? Pseudogene Candidates!
-# Extract Softclipped reads, Tresholds
-# Remapp Softclipped Parts of the reads 
-
-# Debugging 
-# - Break when there are no evidence after anchor treshold
-# - Clean loop that can be called everywhere without break, just moves the files if there is a file. If there is not it does not break. 
-# - Created a genome file for creating a seperate chrom info
-
-# ... break because of bedtools memory depletion, should be sorted.  
-# Set the chrominfo! Obs! Get it from the header of the alignment file always. 
-
-
-# 6/2-19 problem with coverage over split bam and bam when creating the circos, have a look at $ where it must end with nothing except the word. You might need to look at the database if this is a problem!  
-
-# 15/2-19 You have a problem with calculating the max for a pseudogne that has the same name as something similair we detected before. This is the reg finding that works FNTB but i also find Churc1-FNTB here it crashes. 
-
-
-# 9/05 - Time to put in a proper breakpoint of the pseuogene. Skip the breakpoint within the gene itself and focus on the insert site. Use a range from the left and the right anchors to get the breakpoint. Not sure how to handle the pseudogenes coords but maybe they are not that important? Only the structure might be of interest 
-
-
-
-# 10/05 - The problem with adding the start and the end coords from reads in a range is that the end of the read might be very far away due to an indel? What do to then?  
-
-# New: 
-# Debugging 
-# Remove Clipped_Chimeric_Evidence.txt because you already have in in the annotation from annovar 
-
-# Adding new databases for the refgene, i am still running the pseudogenes for the ensemble annotation though. Maybe we can change this? Problem is that the refgene does not contains the info about whether or not it is a pseudogene
- 
-#  12/6 obs! The next anchor for the chim pairs might be 5000 nucl away within the same gene
-
-# 17/6 this part plots using GVIZ instead 
 
 def parseArgs():
     parser = argparse.ArgumentParser(description='Detects processed pseudogenes by looking at DNA data that splits across the splice junctions')
-    parser.add_argument('-I', dest='baminput',help='Bamfile containing alignment performed by a splice aware aligner, need index in the same folder (required)',required=True)
+    parser.add_argument('--Method',dest="method", choices=['Fastq', 'Bam'], required=True)
+    opts, rem_args = parser.parse_known_args()
+    if opts.method == "Bam":
+        parser.add_argument('-I', dest='baminput',help='Bamfile containing alignment performed by a splice aware aligner, need index in the same folder (required)',required=True)
+    else: 
+        parser.add_argument('-R1', dest='Fastq1',help='R1 from a Fastq file (required)',required=True) 
+        parser.add_argument('-R2', dest='Fastq2',help='R2 from a Fastq file (required)',required=True)
+        parser.add_argument('-STARindex', dest='STARindex',help='Path to the star index of the reference genome',required=True)
     parser.add_argument('-S', dest='Sample', help='Sample name, descides the prefix of your outputs together with the output folder (required)', required=True)
     parser.add_argument('--pseudoCandidateDepth', dest='Psdepth', help='The minimum depth that supports the splice junctions, these are the resulting processed pseudogene candidates (default 5)', default=5 ,type=int) 
     parser.add_argument('--InsertDistance', dest='insdistance', help='What is the distance from the parent gene where we can have an pseudogene, low distance might increase the amount of detected pseudogenes but will also increase the amount of false positives. A low distance and you might hit inserted pseudogenes in the parent gene itself which is not very likely (default 200 000)', default=200000,type=int)
@@ -67,7 +37,6 @@ def parseArgs():
     parser.add_argument('--MergeChimReadWithChimpairTresh', dest='chimreadpairdistance', help='When we are combining the results from the chimeric pairs and the chimeric reads we combine them if the chimeric read are withing the chimeric pair anchors or the chimeric read are in a user defined distance from the left anchor (default 100)', default=100,type=int)
     arguments=parser.parse_args(sys.argv[1:])
     return arguments
-
 
 def database(baminput,Sample): 
     #baminput = sys.argv[1] 
@@ -88,9 +57,6 @@ def database(baminput,Sample):
                 chrom  = line.split("\t")[1].split(":")[-1]
                 size = line.split("\t")[2].split(":")[-1]
                 print >> chromout, chrom +"\t"+ str(size)
-    # Annovar Databases
-    anndb = "/apps/bio/apps/annovar/20150322/humandb"
-    annovarscript = "/apps/bio/apps/annovar/20150322/annotate_variation.pl"
     # Lists for cleaning and moving the files    
     Cleaninglist=[]
     Cleaninglist.append(chrominfo)
@@ -99,7 +65,7 @@ def database(baminput,Sample):
     Outputfolder=Sample + "_PPsyOut"
     command = "mkdir -p %s" % Outputfolder 
     os.system(command)
-    return (chrominfo,genecoords,pseudogenecoords,exoncoords,anndb,annovarscript,Cleaninglist, MovingList, Outputfolder) 
+    return (chrominfo,genecoords,pseudogenecoords,exoncoords,Cleaninglist, MovingList, Outputfolder) 
     
 def extractingClipped(Sample,baminput, Cleaninglist,MovingList):
     '''
@@ -330,7 +296,6 @@ def clippedreadbinning(clippedbed, Cleaninglist, MovingList,ChimReadDepthTresh,C
                                 d[chromchim].append(startchim)
                             else:  # Else create as new chromosome
                                 d[chromchim] = [startchim]
-                                
                     for key, value in d.iteritems():
                         firstitem = 0 
                         amount = 1 
@@ -530,178 +495,6 @@ def CountKnownPseudogenes(Sample,baminput,pseudogenecoords, MovingList):
             out.write(key + "\t" + '\t'.join(values) + "\n")
 
 
-def makeCircosGraph(Sample,baminput,Cigarbam,clipandchimevidence,exoncoords, chrominfo,DetectedPseudogenesList, Cleaninglist, MovingList): 
-    '''
-    Here we create the circos picture, Observe that i choose to create the circos pictures in the only case where the pseudogene is evident by both chimreads and pairs
-    '''
-    logging.info('%s\tCreating circos graph for samples with evidence from both Clipped reads and chimeric pairs...',time.ctime().split(" ")[-2])
-    circosbin = "/apps/bio/apps/circos/0.67-7/bin/circos" # Exact path to circos     
-    for i in DetectedPseudogenesList: #
-        # Here we loop through our unique pseudogens for creating the intermediate files that are only required for the plotting of each pseudogene, exons and coverage for the ordinary bam and the split bam together with the link file, this will set up the backbone for the circos file 
-        exactcoordbed = Sample + "_" + i + ".exoncoords.bed"
-        Cleaninglist.append(exactcoordbed)
-        covoverbam_circosformat = Sample + "_" + i + ".Cov_overBam.depth_circos"
-        MovingList.append(covoverbam_circosformat)
-        covoversplitbam_circosformat = Sample + "_" + i + ".Cov_overSplitBam.depth_circos"
-        MovingList.append(covoversplitbam_circosformat) 
-        karyotype = Sample + "_" + i + "_Karyotype"
-        MovingList.append(karyotype)
-        links = Sample + "_" + i + "_LinksbetweenExons.txt"
-        MovingList.append(links)
-        command = "grep -w %s$ %s > %s" %(i,exoncoords,exactcoordbed)
-        os.system(command)
-
-        # Creating one Karyotype for each Pseudogene structure and one link between each pseudogene
-        with open(karyotype, "w") as karyotypeExons:
-            with open(exactcoordbed, "r") as exoncoordread:
-                for line in exoncoordread:
-                    line = line.strip()
-                    chromosome = str(line.split("\t")[0])
-                    startexoncoord = int(line.split("\t")[1])
-                    endexoncoord = int(line.split("\t")[2])
-                    identifier = line.split("\t")[3]
-                    print >> karyotypeExons, "chr - %s %s %s %s exon" %(identifier,identifier,startexoncoord-startexoncoord, abs(endexoncoord-startexoncoord))
-        # Get the structure over the split Ordinary bam, immediately to circos format!
-        command = "/home/xabras/Programs/bedtools2/bin/coverageBed -sorted -b %s -a %s -d -split -g %s| awk 'OFS=\" \" {print $4,$5-1,$5-1,$6}' > %s" %(baminput, exactcoordbed, chrominfo,covoverbam_circosformat) # OBS memory is consumed!!! That is why it breaks? 
-        os.system(command)
-        # Get the structure over the split N's bam, immediately to circos format!
-        command = "/home/xabras/Programs/bedtools2/bin/coverageBed -sorted -b %s -a %s -d -split -g %s | awk 'OFS=\" \" {print $4,$5-1,$5-1,$6}' > %s" %(Cigarbam, exactcoordbed, chrominfo,covoversplitbam_circosformat)
-        os.system(command)
-        # Create the link file
-        df_karyotype = pd.read_csv(karyotype, sep = " ", names=['chr', '-','identifier', 'identifier_2', 'start', 'end', 'color'])
-        exonends = df_karyotype[df_karyotype['color'] == 'exon'][['identifier','end']][:-1] # get only exons from karyotype, then get only the identifier and end column and finally remove the last exons as you dont want a link from this one
-        exonstarts = df_karyotype[df_karyotype['color'] == 'exon'][['identifier','start']][1:] # same as above but here we drop the first link because we dont want a start link from the first exon
-        exonslinkdf = pd.concat([exonends.reset_index(drop=1).add_suffix('_1'), exonstarts.reset_index(drop=1).add_suffix('_2')], axis=1).dropna(axis=1,how="any")[['identifier_1','end_1', 'end_1','identifier_2','start_2','start_2']]
-        exonslinkdf.to_csv(links, sep = " ", header =False, index = False)
-        ## Create the config file
-        configurationfile = Sample + "_" + i + ".conf"
-        MovingList.append(configurationfile)
-        outputpicture = Sample + "_" + i + ".png"
-        outputpicturesvg = Sample + "_" + i + ".svg"
-        Cleaninglist.append(outputpicture)
-        Cleaninglist.append(outputpicturesvg)
-        # Detect the max value from the regular bam coverage. This will set the treshold for the splits to follow
-        depthlist = []
-        with open(covoverbam_circosformat, "r") as d: # looping through the regular coverage from the bamfile over the exons. Save the largest value, this will be set as a max used both for the histogram and the heatmap
-            for line in d: 
-                line=line.strip()
-                coveragebamdepth = line.split(" ")[3]
-                depthlist.append(coveragebamdepth)
-        maxcoverage = max(map(int,depthlist))
-        # Here we print the configuration file
-        with open(configurationfile, "w") as conf:
-            print >> conf, """
-
-# Plot the Circos figure 
-
-# circos.conf
-
-karyotype = %s
-
-<<include colors_fonts_patterns.conf>>
-<colors>
-exon = 191,191,191
-
-</colors>
-
-<ideogram>
-<spacing>
-default = 0.005r
-</spacing>
-radius=0.6r
-thickness=20p
-fill=yes
-show_label=yes # change here?
-label_font=default
-label_size=20p
-label_radius=1.2r
-label_parallel=no
-
-</ideogram>
-
-<image>
-file*=%s
-<<include etc/image.conf>>
-</image>
-
-# OBS you are switching the housekeeping conf here. This is due to all error messages
-<<include /jumbo/WorkingDir/B17-006/PseudoScriptDb/housekeeping.conf>> 
-
-# RGB/HSV color definition, color lists, location of fonts, fill patterns, included from circos distribution
-<<include etc/colors_fonts_patterns.conf>>
-
-show_ticks=yes
-show_tick_labels=yes
-<ticks>
-radius=1r
-color=black
-thickness=5p
-<tick>
-show_labels=yes
-spacing=100
-size=5p
-</tick>
-</ticks>
-
-<links>
-<link>
-file=%s
-color=153,0,0
-radius=0.95r
-bezier_radius=0.7r
-thickness=4p
-</link>
-</links>
-
-<plots>
-
-<plot>
-file=%s
-type=histogram
-r1=0.95r
-r0=0.75r
-fill_color=black
-thickness=2
-orientation=in
-</plot>
-
-<plot>
-file=%s
-type=heatmap
-r0=1.05r
-r1=1.15r
-color=ylgnbu-9-seq
-min=0
-max=%s
-</plot>
-
-</plots>
-
-
-            """ %(karyotype,outputpicture,links,covoversplitbam_circosformat,covoverbam_circosformat, maxcoverage) 
-                
-        # Plot the circos figures, here i use my path to circos  
-        #command = "%s --conf %s " %(circosbin,configurationfile)
-        command = "circos --conf %s" % configurationfile
-        os.system(command)
-        with open(clipandchimevidence, "r") as Sout: # Loop through the line of all the chimeric reads and ad the text on each and one of them. 
-            next(Sout) # Skip the header
-            for line in Sout: 
-                line = line.strip() 
-                SummaryPseudogene = line.split("\t")[0]
-                chimreadsdepth = line.split("\t")[15]
-                startFusion = line.split("\t")[5]
-                chromFusion = line.split("\t")[4]
-                CircosPictureWithAnno = Sample + "_" + line.replace("\t","_") + ".png"
-                if SummaryPseudogene == i and line.split("\t")[5] != "NA" and line.split("\t")[13] != "NA":  # If the picture that we are looping over is the same as the pseudogene fusion, create the new png and move to output dict 
-                    try: # If you have the left anchor add them together, otherwise just use the right anchor
-                        chimpairsdepth = int(line.split("\t")[7]) + int(line.split("\t")[11])
-                    except ValueError:
-                        chimpairsdepth = int(line.split("\t")[7])
-                    command = "convert -size 1500x1500 -gravity Center -pointsize 70 -annotate 0 \"%s -> %s:%s\\n\\n ChimReads:%s\\n\\n ChimPairs:%s\" %s %s" %(i,chromFusion,startFusion,chimreadsdepth,chimpairsdepth,outputpicture, CircosPictureWithAnno)
-                    os.system(command)
-                    MovingList.append(CircosPictureWithAnno)    
-    
 
 def GvizPlottingForOutput(Sample,baminput,Cigarbam,summaryOutAnnotatedBoth,exoncoords,Cleaninglist,MovingList):
     """
@@ -808,12 +601,12 @@ dev.off()
             MovingList.append(outputPicturepng)
             MovingList.append(outputRscript)
             
-def AnnotateFusionPointWithAnnovar(Sample,clipandchimevidence,exoncoords,genecoords,anndb,annovarscript,Cleaninglist,MovingList): 
+def AnnotateFusionPoint(Sample,clipandchimevidence,exoncoords,genecoords,Cleaninglist,MovingList): 
     '''
     Here we annotate the fusion point with annovar, using the absolute start position for the fusion range. 
     '''
     #filestoremove = []
-    logging.info('%s\tAnnotating the fusion points using annovar',time.ctime().split(" ")[-2])
+    logging.info('%s\tAnnotating the fusion points',time.ctime().split(" ")[-2])
     summaryOutAnnotatedBoth = Sample + ".ChimPairs_ChimReads.Ppsy.txt"
     MovingList.append(summaryOutAnnotatedBoth)
     # Calculate the insert within a gene for the fusion 
@@ -831,11 +624,6 @@ def AnnotateFusionPointWithAnnovar(Sample,clipandchimevidence,exoncoords,genecoo
                     fuschr = stripped.split("\t")[4]
                     fusstart = stripped.split("\t")[5]
                     fusend = stripped.split("\t")[6]
-                outtmp=Sample+"_"+str(fuschr)+"_"+str(fusstart)+".tmp"
-                with open(outtmp, "w") as out:
-                    print >> out, "%s\t%s\t%s\t0\t0" %(fuschr, fusstart,fusend)
-                commandRunAnnovar = "perl %s --geneanno --buildver hg19 %s %s -out %s.Annovar.txt" %(annovarscript, outtmp, anndb, outtmp)
-                os.system(commandRunAnnovar)
                 with open(genecoords, "r") as genecoordforinsertanno: # Here we use the gene coord first, if on gene coord is detected grep the exons with the same gene coord from the alignment 
                     for l in genecoordforinsertanno:
                         l = l.strip()
@@ -852,7 +640,6 @@ def AnnotateFusionPointWithAnnovar(Sample,clipandchimevidence,exoncoords,genecoo
                                 exonchrom = exoncoordline.split("\t")[0] # I need to ad the exon chrom as an overlapp importance as well as i cannot grep exactly as the Gene coord is not exactly the same as the exon coords which have an id onto it. 
                                 exonstart = exoncoordline.split("\t")[1]
                                 exonend = exoncoordline.split("\t")[2]
-                                print exoncoordline
                                 if fuschr == exonchrom and int(fusstart) >= int(exonstart) and int(fusend) <= int(exonend):
                                     geneinsertanno = "exonic"
                                     break 
@@ -862,15 +649,7 @@ def AnnotateFusionPointWithAnnovar(Sample,clipandchimevidence,exoncoords,genecoo
                         else: # No hit within the genecoord therefore it is intergenic
                             geneofinsert = "NA"
                             geneinsertanno = "intergenic"  
-                    print stripped + "\t" + geneinsertanno + "\t" + geneofinsert
-                with open(outtmp+".Annovar.txt.variant_function", "r") as variantfunction:
-                    for lineannovar in variantfunction:
-                        strippedannovar = lineannovar.strip()
-                        info = strippedannovar.split("\t")[0]
-                        ExactAnno = strippedannovar.split("\t")[1]
-                        print >> copyexactcoord, stripped + "\t" + info + "\t" + ExactAnno
-                for filename in glob.glob(outtmp+"*"):
-                    os.remove(filename)    
+                    print >> copyexactcoord, stripped + "\t" + geneinsertanno + "\t" + geneofinsert
     return summaryOutAnnotatedBoth
 
 def cleaning(Cleaninglist, MovingList,Outputfolder):
@@ -886,6 +665,8 @@ def cleaning(Cleaninglist, MovingList,Outputfolder):
             os.rename(item, Outputfolder+"/"+item)
     # Now create the subdirectories 
     alignmentout = "%s/Alignments" %Outputfolder
+    if os.path.exists(alignmentout):
+        shutil.rmtree(alignmentout)
     os.makedirs(alignmentout)
     # Alignments
     alignmentfiles = [f for f in os.listdir(Outputfolder) if f.endswith((".bam",".bai"))]
@@ -897,8 +678,12 @@ def cleaning(Cleaninglist, MovingList,Outputfolder):
                 pass 
     # Gviz 
     GvizOut  = "%s/Plotting" %Outputfolder
+    if os.path.exists(GvizOut):
+        shutil.rmtree(GvizOut)
     os.makedirs(GvizOut)
     Rscriptout = GvizOut + "/Scripts"
+    if os.path.exists(Rscriptout):
+        shutil.rmtree(Rscriptout)
     os.makedirs(Rscriptout)
     covplots =  [f for f in os.listdir(Outputfolder) if f.endswith((".png", ".pdf"))]
     if covplots: 
@@ -914,29 +699,10 @@ def cleaning(Cleaninglist, MovingList,Outputfolder):
                 os.rename(Outputfolder+"/"+f, Rscriptout+"/"+f)
             except OSError: 
                 pass
-    # Circos
-    Circosout = "%s/Circos" %Outputfolder
-    os.makedirs(Circosout)
-    Circosout_conf = Circosout + "/Configs"
-    os.makedirs(Circosout_conf)
-    Circosout_pics = Circosout + "/CircosPictures" 
-    os.makedirs(Circosout_pics)
-    configfiles = [f for f in os.listdir(Outputfolder) if f.endswith(("_circos","_Karyotype", ".conf", "_LinksbetweenExons.txt"))]
-    if configfiles: 
-        for f in configfiles:
-            try: 
-                os.rename(Outputfolder+"/"+f, Circosout_conf+"/"+f)
-            except OSError: 
-                pass 
-    circospics = [f for f in os.listdir(Outputfolder) if f.endswith(".png")]
-    if circospics: # If you have something in the list
-        for f in circospics:
-            try: 
-                os.rename(Outputfolder+"/"+f, Circosout_pics+"/"+f)
-            except OSError: 
-                pass 
     # OutPut Results  
     Logout = "%s/PpsyReports" %Outputfolder
+    if os.path.exists(Logout):
+        shutil.rmtree(Logout)
     os.makedirs(Logout)
     logfiles = [f for f in os.listdir(Outputfolder) if f.endswith((".ChimPairs_ChimReads.Ppsy.txt", "_PsudogenewithFusUnfiltered.txt","BinnedPseudoFusExonOverlap.txt",".KnownProcessedPseudogenes.Out"))]
     if logfiles: # If you have something in the list
@@ -946,13 +712,13 @@ def cleaning(Cleaninglist, MovingList,Outputfolder):
             except OSError: 
                 pass 
 
-def main(baminput,Sample, Psdepth,insdistance,ChimPairDepthTresh,ChimPairBinningTresh,ChimReadDepthTresh, ChimReadBinningTresh,chimreadpairdistance):
+def mainBam(baminput,Sample, Psdepth,insdistance,ChimPairDepthTresh,ChimPairBinningTresh,ChimReadDepthTresh, ChimReadBinningTresh,chimreadpairdistance):
     # Create the logger
     process = psutil.Process(os.getpid())
     logging.basicConfig(level=logging.INFO)
     start = time.time()
     logging.info('%s\tStarting Ppsyfinder', time.ctime())
-    (chrominfo,genecoords,pseudogenecoords,exoncoords,anndb,annovarscript,Cleaninglist,MovingList,Outputfolder)=database(baminput,Sample)
+    (chrominfo,genecoords,pseudogenecoords,exoncoords,Cleaninglist,MovingList,Outputfolder)=database(baminput,Sample)
     (Pseudogenecandidatesbed,Cigarbam)=Pseuodogenecandidates(Sample,baminput,exoncoords,pseudogenecoords,chrominfo,genecoords,Cleaninglist, MovingList,Outputfolder,Psdepth)
     bamChimericPairs=extractingchimericReads(Sample, baminput, Cleaninglist, MovingList,insdistance)
     PseudogeneCandidateChimbed=ChimericReadsOverlapwithPseudogeneCandidates(Sample, bamChimericPairs,Pseudogenecandidatesbed, Cleaninglist, MovingList,ChimPairDepthTresh,ChimPairBinningTresh)
@@ -962,7 +728,7 @@ def main(baminput,Sample, Psdepth,insdistance,ChimPairDepthTresh,ChimPairBinning
     clippedwithpseudogeneoverlap=intersectClippedPseudogeneCandidates(Sample, clippedmapping, Pseudogenecandidatesbed, Cleaninglist, MovingList)
     (clipandchimevidence, DetectedPseudogenesList)=CombiningClippWithChimericReads(Sample, clippedwithpseudogeneoverlap, PseudogeneCandidateChimbed, Cleaninglist, MovingList,chimreadpairdistance)
     CountKnownPseudogenes(Sample,baminput,pseudogenecoords, MovingList)
-    summaryOutAnnotatedBoth=AnnotateFusionPointWithAnnovar(Sample,clipandchimevidence,exoncoords,genecoords,anndb,annovarscript,Cleaninglist,MovingList)
+    summaryOutAnnotatedBoth=AnnotateFusionPoint(Sample,clipandchimevidence,exoncoords,genecoords,Cleaninglist,MovingList)
     GvizPlottingForOutput(Sample,baminput,Cigarbam,summaryOutAnnotatedBoth,exoncoords,Cleaninglist,MovingList)
     #makeCircosGraph(Sample,baminput,Cigarbam,clipandchimevidence,exoncoords,chrominfo,DetectedPseudogenesList, Cleaninglist, MovingList)
     cleaning(Cleaninglist, MovingList,Outputfolder)
@@ -970,6 +736,38 @@ def main(baminput,Sample, Psdepth,insdistance,ChimPairDepthTresh,ChimPairBinning
     logging.info('Memory Consumed in Bytes:\t%s',(process.memory_info()[0]))
     logging.info('RunTime in Sec:\t%s', int(time.time()-start))
 
+
+def mainFastq(Fastq1,Fastq2,STARindex,Sample, Psdepth,insdistance,ChimPairDepthTresh,ChimPairBinningTresh,ChimReadDepthTresh, ChimReadBinningTresh,chimreadpairdistance):
+    """
+    This is the Main function to run when you have a Fastq as input and need to run STAR on your data... One small issue here is the multicores, i should multithread but the rest of the script cannot be threaded... If you use nextflow this would have worked but i dont want to add another tool 
+    """
+    # Create the logger
+    process = psutil.Process(os.getpid())
+    logging.basicConfig(level=logging.INFO)
+    start = time.time()
+    logging.info('%s\tStarting Ppsyfinder', time.ctime())
+    (chrominfo,genecoords,pseudogenecoords,exoncoords,Cleaninglist,MovingList,Outputfolder)=database(baminput,Sample)
+    (Pseudogenecandidatesbed,Cigarbam)=Pseuodogenecandidates(Sample,baminput,exoncoords,pseudogenecoords,chrominfo,genecoords,Cleaninglist, MovingList,Outputfolder,Psdepth)
+    bamChimericPairs=extractingchimericReads(Sample, baminput, Cleaninglist, MovingList,insdistance)
+    PseudogeneCandidateChimbed=ChimericReadsOverlapwithPseudogeneCandidates(Sample, bamChimericPairs,Pseudogenecandidatesbed, Cleaninglist, MovingList,ChimPairDepthTresh,ChimPairBinningTresh)
+    bamClipped=extractingClipped(Sample,baminput, Cleaninglist,MovingList) 
+    clippedbed=ClippedBamtoCoord(bamClipped,Cleaninglist, MovingList)
+    clippedmapping=clippedreadbinning(clippedbed,Cleaninglist, MovingList,ChimReadDepthTresh,ChimReadBinningTresh)
+    clippedwithpseudogeneoverlap=intersectClippedPseudogeneCandidates(Sample, clippedmapping, Pseudogenecandidatesbed, Cleaninglist, MovingList)
+    (clipandchimevidence, DetectedPseudogenesList)=CombiningClippWithChimericReads(Sample, clippedwithpseudogeneoverlap, PseudogeneCandidateChimbed, Cleaninglist, MovingList,chimreadpairdistance)
+    CountKnownPseudogenes(Sample,baminput,pseudogenecoords, MovingList)
+    summaryOutAnnotatedBoth=AnnotateFusionPoint(Sample,clipandchimevidence,exoncoords,genecoords,Cleaninglist,MovingList)
+    GvizPlottingForOutput(Sample,baminput,Cigarbam,summaryOutAnnotatedBoth,exoncoords,Cleaninglist,MovingList)
+    cleaning(Cleaninglist, MovingList,Outputfolder)
+    logging.info('%s\tPpsy Finished, results in output folder',time.ctime().split(" ")[-2])
+    logging.info('Memory Consumed in Bytes:\t%s',(process.memory_info()[0]))
+    logging.info('RunTime in Sec:\t%s', int(time.time()-start))
+
+
+
 if __name__=='__main__':
   arguments=parseArgs()
-  main(arguments.baminput, arguments.Sample, arguments.Psdepth, arguments.insdistance,arguments.ChimPairDepthTresh,arguments.ChimPairBinningTresh,arguments.ChimReadDepthTresh,arguments.ChimReadBinningTresh, arguments.chimreadpairdistance)
+  if arguments.method == "Bam":
+      mainBam(arguments.baminput, arguments.Sample, arguments.Psdepth, arguments.insdistance,arguments.ChimPairDepthTresh,arguments.ChimPairBinningTresh,arguments.ChimReadDepthTresh,arguments.ChimReadBinningTresh, arguments.chimreadpairdistance)
+  else: # The input is the Fastq method so you run star within the pipeline 
+      mainFastq(arguments.Fastq1,arguments.Fastq2,arguments.STARindex, arguments.Sample, arguments.Psdepth, arguments.insdistance,arguments.ChimPairDepthTresh,arguments.ChimPairBinningTresh,arguments.ChimReadDepthTresh,arguments.ChimReadBinningTresh, arguments.chimreadpairdistance)
