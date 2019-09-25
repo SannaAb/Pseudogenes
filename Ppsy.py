@@ -20,14 +20,8 @@ import psutil
 def parseArgs():
     parser = argparse.ArgumentParser(description='Detects processed pseudogenes by looking at DNA data that splits across the splice junctions')
     parser.add_argument('--Method',dest="method", choices=['Fastq', 'Bam'], required=True)
-    opts, rem_args = parser.parse_known_args()
-    if opts.method == "Bam":
-        parser.add_argument('-I', dest='baminput',help='Bamfile containing alignment performed by a splice aware aligner, need index in the same folder (required)',required=True)
-    else: 
-        parser.add_argument('-R1', dest='Fastq1',help='R1 from a Fastq file (required)',required=True) 
-        parser.add_argument('-R2', dest='Fastq2',help='R2 from a Fastq file (required)',required=True)
-        parser.add_argument('-STARindex', dest='STARindex',help='Path to the star index of the reference genome',required=True)
     parser.add_argument('-S', dest='Sample', help='Sample name, descides the prefix of your outputs together with the output folder (required)', required=True)
+    parser.add_argument('--Config', dest='Config', help='This is the config file containing all the databasefiles and their paths (required)', required=True)
     parser.add_argument('--pseudoCandidateDepth', dest='Psdepth', help='The minimum depth that supports the splice junctions, these are the resulting processed pseudogene candidates (default 5)', default=5 ,type=int) 
     parser.add_argument('--InsertDistance', dest='insdistance', help='What is the distance from the parent gene where we can have an pseudogene, low distance might increase the amount of detected pseudogenes but will also increase the amount of false positives. A low distance and you might hit inserted pseudogenes in the parent gene itself which is not very likely (default 200 000)', default=200000,type=int)
     parser.add_argument('--ChimericPairDepthTreshold', dest='ChimPairDepthTresh', help='The minimum amount of reads to suppport the chimeric pairs in the left anchor, (min 5), (default 10)', default=10,type=int)
@@ -35,18 +29,42 @@ def parseArgs():
     parser.add_argument('--ChimericReadDepthTreshold', dest='ChimReadDepthTresh', help='The minimum amount of reads to support the chimeric reads in the fusion site, (min 5) (default 10)', default=10,type=int)     
     parser.add_argument('--ChimericReadBinningTreshold', dest='ChimReadBinningTresh', help='When the chimeric reads are binned into the anchors the binning distance defines the distance for the read to belong to same bin', default=10,type=int)
     parser.add_argument('--MergeChimReadWithChimpairTresh', dest='chimreadpairdistance', help='When we are combining the results from the chimeric pairs and the chimeric reads we combine them if the chimeric read are withing the chimeric pair anchors or the chimeric read are in a user defined distance from the left anchor (default 100)', default=100,type=int)
+    opts, rem_args = parser.parse_known_args()
+    if opts.method == "Bam":
+        parser.add_argument('-I', dest='baminput',help='Bamfile containing alignment performed by a splice aware aligner, need index in the same folder (required)',required=True)
+    else: 
+        parser.add_argument('-R1', dest='Fastq1',help='R1 from a Fastq file (required)',required=True) 
+        parser.add_argument('-R2', dest='Fastq2',help='R2 from a Fastq file (required)',required=True)
+        parser.add_argument('-STARindex', dest='STARindex',help='Path to the star index of the reference genome',required=True)
     arguments=parser.parse_args(sys.argv[1:])
     return arguments
 
 
-def database(Sample): 
+def database(Config): 
     """
     This part reads the databases that is used for input 
     """
-    logging.info('%s\tReading the database files', time.ctime().split(" ")[-2])
-    genecoords="/jumbo/WorkingDir/B17-006/PseudoScriptDb/VersionAnnotationrefgene/Gene_coord_hg19_refgene.bed"
-    pseudogenecoords="/jumbo/WorkingDir/B17-006/PseudoScriptDb/KnownProcessedPseudogenes_Homo_sapiens.GRCh37.75_CHR.bed"
-    exoncoords="/jumbo/WorkingDir/B17-006/PseudoScriptDb/VersionAnnotationrefgene/Exon_coord_hg19_refgene.bed" # This one wont contain overlapping Coords!
+    logging.info('%s\tReading the database files from the Config file', time.ctime().split(" ")[-2])
+    with open(Config, "r") as configin: 
+        for line in configin: 
+            line=line.strip()
+            if line.startswith("#"): 
+                continue 
+            if line.split("=")[0] == "genecoords":
+                genecoords=line.split("=")[1].strip()
+            if line.split("=")[0] == "exoncoords":
+                exoncoords=line.split("=")[1].strip()
+            if line.split("=")[0] == "pseudogenecoords":
+                pseudogenecoords=line.split("=")[1].strip()
+    if not genecoords: 
+        print "You are missing the GeneCoord Database, add it with the proper path to your config file"
+        sys.exit()
+    if not exoncoords: 
+        print "Your are missing the Exoncoord Database, add it with the proper path to your config file"
+        sys.exit()
+    if not pseudogenecoords: 
+        print "Your are missing the PseudogeneCoord Database, add it with the proper path to your config file"
+        sys.exit()
     return(genecoords,pseudogenecoords,exoncoords)
 
 def CreatingOutputDir(Sample):
@@ -67,14 +85,16 @@ def AlignmentWithSTAR(Fastq1,Fastq2,STARindex,Sample,Outputfolder):
     This function is only run if you dont have the alignment file so this part runs STAR, the Issue here is that we cannot run this in multicore while the other is single core, this is why it is preferable to have the Alignmentfile with star already done  
     """
     # You need to have STAR in your path for this 
-
     logging.info('%s\tAlignment using STAR... This step might be very slow', time.ctime().split(" ")[-2])
     baminput = Outputfolder +"/"+ Sample + "Aligned.sortedByCoord.out.bam"
-    command = "STAR --runThreadN 1 --genomeDir %s --chimOutType WithinBAM --outSAMunmapped Within --outFilterMultimapNmax 20 --chimSegmentMin 20 --readFilesIn %s %s --outSAMtype BAM SortedByCoordinate --outFileNamePrefix %s/%s" %(STARindex,Fastq1,Fastq2,Outputfolder,Sample)
-    os.system(command)
+    if Fastq1.endswith(".gz"):
+        command = "STAR --runThreadN 1 --genomeDir %s --chimOutType WithinBAM --outSAMunmapped Within --outFilterMultimapNmax 20 --chimSegmentMin 20 --readFilesCommand zcat --readFilesIn %s %s --outSAMtype BAM SortedByCoordinate --outFileNamePrefix %s/%s" %(STARindex,Fastq1,Fastq2,Outputfolder,Sample)
+        os.system(command)
+    else:
+        command = "STAR --runThreadN 1 --genomeDir %s --chimOutType WithinBAM --outSAMunmapped Within --outFilterMultimapNmax 20 --chimSegmentMin 20 --readFilesIn %s %s --outSAMtype BAM SortedByCoordinate --outFileNamePrefix %s/%s" %(STARindex,Fastq1,Fastq2,Outputfolder,Sample)
+        os.system(command)
     command = "samtools index %s" %baminput
     os.system(command)
-
     return(baminput)
 
 def CreateTheChromosomeInfoFile(baminput,Sample,Cleaninglist):
@@ -526,10 +546,6 @@ def GvizPlottingForOutput(Sample,baminput,Cigarbam,summaryOutAnnotatedBoth,exonc
     This part plots the outputs using the gviz package in R instead of circos
     """
     logging.info('%s\tPlotting The Detected PseudogeneCandidates using GVIZ',time.ctime().split(" ")[-2])
-    #bamfile=baminput
-    #cigarbamfile=Cigarbam
-    #outputReport=summaryOutAnnotatedBoth
-    #exoncoordsdb = exoncoords
     with open(summaryOutAnnotatedBoth, "r") as finaloutputreport: 
         h=next(finaloutputreport)
         exoncoordsdict = {}
@@ -737,13 +753,13 @@ def cleaning(Cleaninglist, MovingList,Outputfolder):
             except OSError: 
                 pass 
 
-def mainBam(baminput,Sample, Psdepth,insdistance,ChimPairDepthTresh,ChimPairBinningTresh,ChimReadDepthTresh, ChimReadBinningTresh,chimreadpairdistance):
+def mainBam(baminput,Sample, Config,Psdepth,insdistance,ChimPairDepthTresh,ChimPairBinningTresh,ChimReadDepthTresh, ChimReadBinningTresh,chimreadpairdistance):
     # Create the logger
     process = psutil.Process(os.getpid())
     logging.basicConfig(level=logging.INFO)
     start = time.time()
     logging.info('%s\tStarting Ppsyfinder', time.ctime())
-    (genecoords,pseudogenecoords,exoncoords)=database(Sample)
+    (genecoords,pseudogenecoords,exoncoords)=database(Config)
     (Cleaninglist, MovingList,Outputfolder)=CreatingOutputDir(Sample)
     chrominfo=CreateTheChromosomeInfoFile(baminput,Sample,Cleaninglist)
     (Pseudogenecandidatesbed,Cigarbam)=Pseuodogenecandidates(Sample,baminput,exoncoords,pseudogenecoords,chrominfo,genecoords,Cleaninglist, MovingList,Outputfolder,Psdepth)
@@ -760,11 +776,12 @@ def mainBam(baminput,Sample, Psdepth,insdistance,ChimPairDepthTresh,ChimPairBinn
     #makeCircosGraph(Sample,baminput,Cigarbam,clipandchimevidence,exoncoords,chrominfo,DetectedPseudogenesList, Cleaninglist, MovingList)
     cleaning(Cleaninglist, MovingList,Outputfolder)
     logging.info('%s\tPpsy Finished, results in output folder',time.ctime().split(" ")[-2])
-    logging.info('Memory Consumed in Bytes:\t%s',(process.memory_info()[0]))
+    logging.info('Total memory Consumed in Bytes:\t%s',(process.memory_info()[0]))
+    print process.memory_info()
     logging.info('RunTime in Sec:\t%s', int(time.time()-start))
 
 
-def mainFastq(Fastq1,Fastq2,STARindex,Sample, Psdepth,insdistance,ChimPairDepthTresh,ChimPairBinningTresh,ChimReadDepthTresh, ChimReadBinningTresh,chimreadpairdistance):
+def mainFastq(Fastq1,Fastq2,STARindex,Sample,Config, Psdepth,insdistance,ChimPairDepthTresh,ChimPairBinningTresh,ChimReadDepthTresh, ChimReadBinningTresh,chimreadpairdistance):
     """
     This is the Main function to run when you have a Fastq as input and need to run STAR on your data... One small issue here is the multicores, i should multithread but the rest of the script cannot be threaded... If you use nextflow this would have worked but i dont want to add another tool 
     """
@@ -773,7 +790,7 @@ def mainFastq(Fastq1,Fastq2,STARindex,Sample, Psdepth,insdistance,ChimPairDepthT
     logging.basicConfig(level=logging.INFO)
     start = time.time()
     logging.info('%s\tStarting Ppsyfinder, including The Alignment', time.ctime())
-    (genecoords,pseudogenecoords,exoncoords)=database(Sample)
+    (genecoords,pseudogenecoords,exoncoords)=database(Config)
     (Cleaninglist, MovingList,Outputfolder)=CreatingOutputDir(Sample)
     baminput=AlignmentWithSTAR(Fastq1,Fastq2,STARindex,Sample,Outputfolder)
     chrominfo=CreateTheChromosomeInfoFile(baminput,Sample,Cleaninglist)
@@ -798,6 +815,7 @@ def mainFastq(Fastq1,Fastq2,STARindex,Sample, Psdepth,insdistance,ChimPairDepthT
 if __name__=='__main__':
   arguments=parseArgs()
   if arguments.method == "Bam":
-      mainBam(arguments.baminput, arguments.Sample, arguments.Psdepth, arguments.insdistance,arguments.ChimPairDepthTresh,arguments.ChimPairBinningTresh,arguments.ChimReadDepthTresh,arguments.ChimReadBinningTresh, arguments.chimreadpairdistance)
+      mainBam(arguments.baminput, arguments.Sample, arguments.Config,arguments.Psdepth, arguments.insdistance,arguments.ChimPairDepthTresh,arguments.ChimPairBinningTresh,arguments.ChimReadDepthTresh,arguments.ChimReadBinningTresh, arguments.chimreadpairdistance)
+
   else: # The input is the Fastq method so you run star within the pipeline 
-      mainFastq(arguments.Fastq1,arguments.Fastq2,arguments.STARindex, arguments.Sample, arguments.Psdepth, arguments.insdistance,arguments.ChimPairDepthTresh,arguments.ChimPairBinningTresh,arguments.ChimReadDepthTresh,arguments.ChimReadBinningTresh, arguments.chimreadpairdistance)
+      mainFastq(arguments.Fastq1,arguments.Fastq2,arguments.STARindex, arguments.Sample, arguments.Config,arguments.Psdepth, arguments.insdistance,arguments.ChimPairDepthTresh,arguments.ChimPairBinningTresh,arguments.ChimReadDepthTresh,arguments.ChimReadBinningTresh, arguments.chimreadpairdistance)
