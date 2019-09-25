@@ -110,3 +110,16 @@ Finally the pipeline requires annotation files, the main scripts are based on re
 - /jumbo/WorkingDir/B17-006/PseudoScriptDb/KnownProcessedPseudogenes_Homo_sapiens.GRCh37.75_CHR.bed    
 - /jumbo/WorkingDir/B17-006/PseudoScriptDb/VersionAnnotationrefgene/Exon_coord_hg19_refgene.bed  
 
+## Memory Cons... 
+
+There is no easy way of implementing the total memory consumtion for the script as it is constantly changing to new processes. The easiest way is instead of running the memory profiles which is a python tools that allows you to plot the memory consumtion through time together with the main scripts child processes. 
+
+See examples of how to run it below 
+
+```
+
+mprof run --include-children ../Scripts/Ppsy.py --Method Bam -I SMAD4_chr12_580000_ORD.r1.fqAligned.sortedByCoord.out.bam -S SMAD4_chr12_580000
+
+mprof plot mprofile_20190925095608.dat --title STAR -O STAR_test 
+
+```
