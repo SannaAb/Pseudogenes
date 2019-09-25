@@ -1,0 +1,33 @@
+# This is the file that contains the proper paths to your database files, the script will read this file and save the file paths to the variables 
+
+#genecoords file is a bed file containing the gene coords, example: 
+#chr1    69091   70008   OR4F5
+#chr1    367659  180795226       OR4F16
+#chr1    367659  180795226       OR4F29
+#chr1    367659  180795226       OR4F3
+
+genecoords=/full/path/to/Gene_coord_hg19_refgene.bed
+
+#----------------------------------------------#
+
+#exoncoords file is a bed file containing the exon coords, overlapping exon coords are merged, example: 
+# You want an identifier before the gene name so the exon names are unique
+#chr1    69091   70008   id124856-OR4F5
+#chr1    367659  368597  id124844-OR4F16
+#chr1    367659  368597  id124849-OR4F29
+#chr1    367659  368597  id124852-OR4F3
+
+exoncoords=/full/path/to/Exon_coord_hg19_refgene.bed
+
+#----------------------------------------------#
+
+# pseudogenecoords file is a bedfile containing the gene coords of known processed pseudogenes, this is for annotating the known processed pseudogenes 
+#chr1    131025  134836  CICP27
+#chr1    135141  135895  RP11-34P13.15
+#chr1    137682  137965  RP11-34P13.16
+#chr1    228292  228654  AP006222.1
+#chr1    228319  228775  AP006222.1
+#chr1    329431  332236  CICP7
+#chr1    379105  379467  WBP1LP7
+
+pseudogenecoords=/full/path/to/KnownProcessedPseudogenes_Homo_sapiens.GRCh37.75_CHR.bed
