@@ -276,7 +276,7 @@ def WritingTheRows(SampleFolders,outfolder,form):
                 
                 """ %(Sample,Exactfile,KnownPpsy)
         
-    with open("PpsySummary/PpsySummaryReport.html","a") as outhtml:
+    with open(outhtmlfile,"a") as outhtml:
         print >> outhtml, """
         </table>
    
