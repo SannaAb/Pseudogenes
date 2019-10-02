@@ -39,6 +39,53 @@ def parseArgs():
     arguments=parser.parse_args(sys.argv[1:])
     return arguments
 
+def CheckingPaths(): 
+    """
+    This is the part which checks so you have all the correct paths to the tools that you are using 
+    """
+    # Testing Bedtools 
+    command = "which bedtools"
+    a = subprocess.Popen(command, stdout=subprocess.PIPE,stderr = subprocess.PIPE, shell=True)
+    stdout, stderr = a.communicate()
+    if not stdout:
+        print "Error, there is no bedtools in your path, Please install! Exiting!"
+        sys.exit()
+    # Testing Samtools, Impportant that you are not using two old version of samtools 
+    command = "which samtools"
+    a = subprocess.Popen(command, stdout=subprocess.PIPE,stderr = subprocess.PIPE, shell=True)
+    stdout, stderr = a.communicate()
+    if not stdout:
+        print "Error, there is no samtools in your path, Please install! Exiting!"
+        sys.exit()
+    # Testing R 
+    command = "which R"
+    a = subprocess.Popen(command, stdout=subprocess.PIPE,stderr = subprocess.PIPE, shell=True)
+    stdout, stderr = a.communicate()
+    if not stdout:
+        print "Error, there is no R in your path, Please install! Exiting!"
+        sys.exit()
+    # Test required R packages 
+    command = "Rscript -e 'library(\"Gviz\")'"
+    a = subprocess.Popen(command, stdout=subprocess.PIPE,stderr = subprocess.PIPE, shell=True)
+    stdout, stderr = a.communicate()
+    if not stdout:
+        print "Error, there GVIZ is not installed in your R version, Please install! Exiting!"
+        sys.exit()
+    # Testing convert 
+    command = "which convert"
+    a = subprocess.Popen(command, stdout=subprocess.PIPE,stderr = subprocess.PIPE, shell=True)
+    stdout, stderr = a.communicate()
+    if not stdout:
+        print "Error, there is no convert in your path, Please install! Exiting!"
+        sys.exit()
+    # Testing awk 
+    command = "which awk"
+    a = subprocess.Popen(command, stdout=subprocess.PIPE,stderr = subprocess.PIPE, shell=True)
+    stdout, stderr = a.communicate()
+    if not stdout:
+        print "Error, there is no awk in your path, Please install! Exiting!"
+        sys.exit()
+
 
 def database(Config): 
     """
@@ -759,6 +806,7 @@ def mainBam(baminput,Sample, Config,Psdepth,insdistance,ChimPairDepthTresh,ChimP
     logging.basicConfig(level=logging.INFO)
     start = time.time()
     logging.info('%s\tStarting Ppsyfinder', time.ctime())
+    CheckingPaths()
     (genecoords,pseudogenecoords,exoncoords)=database(Config)
     (Cleaninglist, MovingList,Outputfolder)=CreatingOutputDir(Sample)
     chrominfo=CreateTheChromosomeInfoFile(baminput,Sample,Cleaninglist)
@@ -790,6 +838,7 @@ def mainFastq(Fastq1,Fastq2,STARindex,Sample,Config, Psdepth,insdistance,ChimPai
     logging.basicConfig(level=logging.INFO)
     start = time.time()
     logging.info('%s\tStarting Ppsyfinder, including The Alignment', time.ctime())
+    CheckingPaths()
     (genecoords,pseudogenecoords,exoncoords)=database(Config)
     (Cleaninglist, MovingList,Outputfolder)=CreatingOutputDir(Sample)
     baminput=AlignmentWithSTAR(Fastq1,Fastq2,STARindex,Sample,Outputfolder)
