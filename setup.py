@@ -4,7 +4,7 @@ with open("README.md", "r") as fh:
 setuptools.setup(
      name='Ppsy',  
      version='0.1',
-     scripts=['scripts/Ppsy.py'] ,
+     scripts=['Ppsy.py'] ,
      author="Sanna Abrahamsson",
      author_email="sannaabrahamsson@gmail.com",
      description="Script to detect Processed Pseudogenes",
