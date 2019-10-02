@@ -11,7 +11,7 @@ setuptools.setup(
      long_description=long_description,
    long_description_content_type="text/markdown",
      url="https://github.com/SannaAb/Pseudogenes",
-     packages=["sys", "os", "pandas", "itertools", "csv", "re", "subprocess", "glob", "shutil", "pysam", "collections", "time","argparse", "logging", "psutil"],
+     packages=setuptools.find_packages()
      classifiers=[
          "Programming Language :: Python :: 2",
          
