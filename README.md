@@ -5,6 +5,48 @@ Ppsy finder is pipeline for detecting novel processed pseudogenes using DNA sequ
 Processed pseudogenes are structures that are reintroduced into the genome by retrotransposition. This feature is used by Ppsy finder that detects pseudogene candidates by searching for spliced genes withing the genomic sequencing data. Insert positions of the pseudogene candidates are recorded by linking the pseudogene candidate with softclipping (chimeric reads) and read pair insert sizes (chimeric pairs). The idea of this is dependent on an splice aware aligner that allows softclipping and chimeric read pairs.  
 
 
+
+## Installation 
+
+The recommended way of installing the tool is through Anaconda. 
+
+First step is to create a conda evironment for Ppsy which builts upon python 2.7 and load the newly built conda environment using source activate 
+
+```
+
+conda create -n Ppsy python=2.7
+source activate Ppsy 
+
+```
+
+When the conda environment for Ppsy is loaded we download the latest version of the tar.ball from the Ppsy github repo and install the downloaded tarball using pip. 
+The setup will install the required python modules which are_
+
+```
+
+wget https://github.com/SannaAb/Pseudogenes/archive/v.0.1.3.tar.gz
+pip install v.0.1.3.tar.gz
+
+```
+The required python modules (pandas, pysam and psutil) will be installed. 
+You can make sure that everything was installed correcly by typing Ppsy.py within the terminal. 
+
+
+# Other dependencies 
+
+Ppsy is also dependent on some tools outside of python. You need to have these tools within your path to make sure that the script works correctly. You can install these tools within your environment using anaconda as well. Make sure that you have source activated your environment first. 
+
+```
+
+conda install -c bioconda bedtools
+conda install -c bioconda samtools
+conda install -c bioconda star
+conda install -c bioconda bioconductor-gviz
+
+````
+
+
+
 ## Structure  
 The Ppsy finder consists of two scripts, the Ppsy.py scripts that is the pipeline itself and the script Makeppsyreport.py that outputs a html report for your samples, the results have evidence from both chimeric reads and chimeric pairs. 
 
@@ -77,38 +119,6 @@ The easieset way of installing the dependencies are to use conda.
 conda create -n PPsy 
 
 ## Dependencies 
-
-The script is written in python2.7, tools required are:  
-
-- Annovar  
-- awk  (?)
-- Bedtools  
-- Samtools  
-- (STAR)  
-
-The script is built within python 2.7, required modules are listed below 
-
-- sys  
-- os  
-- pandas  
-- itertools  
-- csv  
-- re  
-- subprocess  
-- glob  
-- shutil  
-- pysam  
-- collections  
-- collections import Counter  
-- time  
-- argparse  
-- logging  
-
-Finally the pipeline requires annotation files, the main scripts are based on refgene hg19, the user can change this but in that case make sure that you keep the format. 
-
-- /jumbo/WorkingDir/B17-006/PseudoScriptDb/VersionAnnotationrefgene/Gene_coord_hg19_refgene.bed  
-- /jumbo/WorkingDir/B17-006/PseudoScriptDb/KnownProcessedPseudogenes_Homo_sapiens.GRCh37.75_CHR.bed    
-- /jumbo/WorkingDir/B17-006/PseudoScriptDb/VersionAnnotationrefgene/Exon_coord_hg19_refgene.bed  
 
 ## Memory Cons... 
 
