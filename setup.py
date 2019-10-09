@@ -1,7 +1,6 @@
 #!/usr/bin/py 
 import setuptools
 
-
 setuptools.setup(
     name='Ppsy',  
     version='0.1',
@@ -16,6 +15,7 @@ setuptools.setup(
     install_requires=['pandas','pysam','psutil'],
     package_data={'Ppsy': ['README.md', 'HG19_databases/Exon_coord_hg19_refgene.bed',"HG19_databases/Gene_coord_hg19_refgene.bed","HG19_databases/KnownProcessedPseudogenes_Homo_sapiens.GRCh37.75_CHR.bed","HG19_databases/Ppsy_Config.txt"]
                    },
+    include_package_data=True,
     classifiers=[
          "Programming Language :: Python :: 2", 
          
