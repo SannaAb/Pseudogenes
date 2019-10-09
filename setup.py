@@ -13,7 +13,7 @@ setuptools.setup(
     long_description_content_type="text/markdown",
     url="https://github.com/SannaAb/Pseudogenes",
     packages=setuptools.find_packages(),
-    install_requires=['pandas','pysam','psutil']
+    install_requires=['pandas','pysam','psutil'],
     package_data={'Ppsy': ['README.md', 'HG19_databases/Exon_coord_hg19_refgene.bed',"HG19_databases/Gene_coord_hg19_refgene.bed","HG19_databases/KnownProcessedPseudogenes_Homo_sapiens.GRCh37.75_CHR.bed","HG19_databases/Ppsy_Config.txt"]
                    },
     classifiers=[
