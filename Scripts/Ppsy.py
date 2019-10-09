@@ -17,11 +17,15 @@ import argparse
 import logging
 import psutil
 
+from argparse import ArgumentParser, RawTextHelpFormatter
+
+
 def parseArgs():
-    parser = argparse.ArgumentParser(description='Detects processed pseudogenes by looking at DNA data that splits across the splice junctions')
-    parser.add_argument('--Method',dest="method", choices=['Fastq', 'Bam'], required=True)
+    parser = argparse.ArgumentParser(description='Detects processed pseudogenes by looking at DNA data that splits across the splice junctions',formatter_class=RawTextHelpFormatter)    
+    choices_helper = { "Fastq": "Input is Fastq, The pipeline will run STAR for you, method specific parameters are [-R1 Path to Read1, -R2, Path to Read2, -STARindex Path to human reference genome]",
+                       "Bam": "Input is Bam which means that you have already aligned your fastq files towards the reference genome in the required way (Read more about how to align using the method description), method specific parameter is [-I, Path to the bam input]"}
+    parser.add_argument('--Method',dest="method", choices=choices_helper,help='\n'.join("{}: {}".format(key, value) for key, value in choices_helper.iteritems()), required=True)
     parser.add_argument('-S', dest='Sample', help='Sample name, descides the prefix of your outputs together with the output folder (required)', required=True)
-    parser.add_argument('--Config', dest='Config', help='This is the config file containing all the databasefiles and their paths (required)', required=True)
     parser.add_argument('--pseudoCandidateDepth', dest='Psdepth', help='The minimum depth that supports the splice junctions, these are the resulting processed pseudogene candidates (default 5)', default=5 ,type=int) 
     parser.add_argument('--InsertDistance', dest='insdistance', help='What is the distance from the parent gene where we can have an pseudogene, low distance might increase the amount of detected pseudogenes but will also increase the amount of false positives. A low distance and you might hit inserted pseudogenes in the parent gene itself which is not very likely (default 200 000)', default=200000,type=int)
     parser.add_argument('--ChimericPairDepthTreshold', dest='ChimPairDepthTresh', help='The minimum amount of reads to suppport the chimeric pairs in the left anchor, (min 5), (default 10)', default=10,type=int)
@@ -58,19 +62,19 @@ def CheckingPaths():
         print "Error, there is no samtools in your path, Please install! Exiting!"
         sys.exit()
     # Testing R 
-    command = "which R"
-    a = subprocess.Popen(command, stdout=subprocess.PIPE,stderr = subprocess.PIPE, shell=True)
-    stdout, stderr = a.communicate()
-    if not stdout:
-        print "Error, there is no R in your path, Please install! Exiting!"
-        sys.exit()
+    #command = "which R"
+    #a = subprocess.Popen(command, stdout=subprocess.PIPE,stderr = subprocess.PIPE, shell=True)
+    #stdout, stderr = a.communicate()
+    #if not stdout:
+     #   print "Error, there is no R in your path, Please install! Exiting!"
+     #   sys.exit()
     # Test required R packages 
-    command = "Rscript -e 'library(\"Gviz\")'"
-    a = subprocess.Popen(command, stdout=subprocess.PIPE,stderr = subprocess.PIPE, shell=True)
-    stdout, stderr = a.communicate()
-    if not stdout:
-        print "Error, there GVIZ is not installed in your R version, Please install! Exiting!"
-        sys.exit()
+    #command = "Rscript -e 'library(\"Gviz\")'"
+    #a = subprocess.Popen(command, stdout=subprocess.PIPE,stderr = subprocess.PIPE, shell=True)
+    #stdout, stderr = a.communicate()
+    #if not stdout:
+    #    print "Error, there GVIZ is not installed in your R version, Please install! Exiting!"
+    #    sys.exit()
     # Testing convert 
     command = "which convert"
     a = subprocess.Popen(command, stdout=subprocess.PIPE,stderr = subprocess.PIPE, shell=True)
@@ -86,32 +90,15 @@ def CheckingPaths():
         print "Error, there is no awk in your path, Please install! Exiting!"
         sys.exit()
 
-
-def database(Config): 
+def database(): 
     """
     This part reads the databases that is used for input 
     """
-    logging.info('%s\tReading the database files from the Config file', time.ctime().split(" ")[-2])
-    with open(Config, "r") as configin: 
-        for line in configin: 
-            line=line.strip()
-            if line.startswith("#"): 
-                continue 
-            if line.split("=")[0] == "genecoords":
-                genecoords=line.split("=")[1].strip()
-            if line.split("=")[0] == "exoncoords":
-                exoncoords=line.split("=")[1].strip()
-            if line.split("=")[0] == "pseudogenecoords":
-                pseudogenecoords=line.split("=")[1].strip()
-    if not genecoords: 
-        print "You are missing the GeneCoord Database, add it with the proper path to your config file"
-        sys.exit()
-    if not exoncoords: 
-        print "Your are missing the Exoncoord Database, add it with the proper path to your config file"
-        sys.exit()
-    if not pseudogenecoords: 
-        print "Your are missing the PseudogeneCoord Database, add it with the proper path to your config file"
-        sys.exit()
+    # Check database after installation 
+    logging.info('%s\tCollecting the paths to the HG19 databases', time.ctime().split(" ")[-2])
+    genecoords = os.path.abspath(__file__).split("bin/Ppsy.py")[0] + "HG19_databases/Gene_coord_hg19_refgene.bed"
+    exoncoords = os.path.abspath(__file__).split("bin/Ppsy.py")[0] + "HG19_databases/Exon_coord_hg19_refgene.bed"
+    pseudogenecoords = os.path.abspath(__file__).split("bin/Ppsy.py")[0] + "HG19_databases/KnownProcessedPseudogenes_Homo_sapiens.GRCh37.75_CHR.bed"
     return(genecoords,pseudogenecoords,exoncoords)
 
 def CreatingOutputDir(Sample):
@@ -800,7 +787,7 @@ def cleaning(Cleaninglist, MovingList,Outputfolder):
             except OSError: 
                 pass 
 
-def mainBam(baminput,Sample, Config,Psdepth,insdistance,ChimPairDepthTresh,ChimPairBinningTresh,ChimReadDepthTresh, ChimReadBinningTresh,chimreadpairdistance):
+def mainBam(baminput,Sample,Psdepth,insdistance,ChimPairDepthTresh,ChimPairBinningTresh,ChimReadDepthTresh, ChimReadBinningTresh,chimreadpairdistance):
     # Create the logger
     process = psutil.Process(os.getpid())
     logging.basicConfig(level=logging.INFO)
@@ -829,7 +816,7 @@ def mainBam(baminput,Sample, Config,Psdepth,insdistance,ChimPairDepthTresh,ChimP
     logging.info('RunTime in Sec:\t%s', int(time.time()-start))
 
 
-def mainFastq(Fastq1,Fastq2,STARindex,Sample,Config, Psdepth,insdistance,ChimPairDepthTresh,ChimPairBinningTresh,ChimReadDepthTresh, ChimReadBinningTresh,chimreadpairdistance):
+def mainFastq(Fastq1,Fastq2,STARindex,Sample,Psdepth,insdistance,ChimPairDepthTresh,ChimPairBinningTresh,ChimReadDepthTresh, ChimReadBinningTresh,chimreadpairdistance):
     """
     This is the Main function to run when you have a Fastq as input and need to run STAR on your data... One small issue here is the multicores, i should multithread but the rest of the script cannot be threaded... If you use nextflow this would have worked but i dont want to add another tool 
     """
@@ -864,7 +851,7 @@ def mainFastq(Fastq1,Fastq2,STARindex,Sample,Config, Psdepth,insdistance,ChimPai
 if __name__=='__main__':
   arguments=parseArgs()
   if arguments.method == "Bam":
-      mainBam(arguments.baminput, arguments.Sample, arguments.Config,arguments.Psdepth, arguments.insdistance,arguments.ChimPairDepthTresh,arguments.ChimPairBinningTresh,arguments.ChimReadDepthTresh,arguments.ChimReadBinningTresh, arguments.chimreadpairdistance)
+      mainBam(arguments.baminput, arguments.Sample,arguments.Psdepth, arguments.insdistance,arguments.ChimPairDepthTresh,arguments.ChimPairBinningTresh,arguments.ChimReadDepthTresh,arguments.ChimReadBinningTresh, arguments.chimreadpairdistance)
 
   else: # The input is the Fastq method so you run star within the pipeline 
-      mainFastq(arguments.Fastq1,arguments.Fastq2,arguments.STARindex, arguments.Sample, arguments.Config,arguments.Psdepth, arguments.insdistance,arguments.ChimPairDepthTresh,arguments.ChimPairBinningTresh,arguments.ChimReadDepthTresh,arguments.ChimReadBinningTresh, arguments.chimreadpairdistance)
+      mainFastq(arguments.Fastq1,arguments.Fastq2,arguments.STARindex, arguments.Sample,arguments.Psdepth, arguments.insdistance,arguments.ChimPairDepthTresh,arguments.ChimPairBinningTresh,arguments.ChimReadDepthTresh,arguments.ChimReadBinningTresh, arguments.chimreadpairdistance)
