@@ -4,8 +4,6 @@
 Ppsy finder is pipeline for detecting novel processed pseudogenes using DNA sequencing data (Exomic, Genomic, Targeted gene panels etc). 
 Processed pseudogenes are structures that are reintroduced into the genome by retrotransposition. This feature is used by Ppsy finder that detects pseudogene candidates by searching for spliced genes withing the genomic sequencing data. Insert positions of the pseudogene candidates are recorded by linking the pseudogene candidate with softclipping (chimeric reads) and read pair insert sizes (chimeric pairs). The idea of this is dependent on an splice aware aligner that allows softclipping and chimeric read pairs.  
 
-
-
 ## Installation 
 
 The recommended way of installing the tool is through Anaconda. 
@@ -23,8 +21,8 @@ When the conda environment for Ppsy is loaded we download the latest version of 
 
 ```
 
-wget https://github.com/SannaAb/Pseudogenes/archive/v.0.1.3.tar.gz
-pip install v.0.1.3.tar.gz
+wget https://github.com/SannaAb/Pseudogenes/archive/v.0.1.5.tar.gz
+pip install v.0.1.5.tar.gz
 
 ```
 The required python modules (pandas, pysam and psutil) will be installed. 
@@ -38,11 +36,18 @@ Ppsy is also dependent on some tools outside of python. You need to have these t
 ```
 
 conda install -c bioconda bedtools
-conda install -c bioconda samtools
+conda install -c conda-forge -c bioconda samtools bzip2
 conda install -c bioconda star
 conda install -c bioconda bioconductor-gviz
+conda install -c conda-forge ncurses # (?)
+
 
 ````
+
+## How to run 
+
+
+
 
 ## Structure  
 The Ppsy finder consists of two scripts, the Ppsy.py scripts that is the pipeline itself and the script Makeppsyreport.py that outputs a html report for your samples, the results have evidence from both chimeric reads and chimeric pairs. 
