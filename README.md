@@ -32,7 +32,7 @@ The required python modules (pandas, pysam and psutil) will be installed.
 You can make sure that everything was installed correcly by typing Ppsy.py within the terminal. 
 
 
-# Other dependencies 
+### Installation Other dependencies 
 
 Ppsy is also dependent on some tools outside of python. You need to have these tools within your path to make sure that the script works correctly. You can install these tools within your environment using anaconda as well. Make sure that you have source activated your environment first. 
 
@@ -44,8 +44,6 @@ conda install -c bioconda star
 conda install -c bioconda bioconductor-gviz
 
 ````
-
-
 
 ## Structure  
 The Ppsy finder consists of two scripts, the Ppsy.py scripts that is the pipeline itself and the script Makeppsyreport.py that outputs a html report for your samples, the results have evidence from both chimeric reads and chimeric pairs. 
