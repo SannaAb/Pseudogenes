@@ -20,7 +20,6 @@ source activate Ppsy
 ```
 
 When the conda environment for Ppsy is loaded we download the latest version of the tar.ball from the Ppsy github repo and install the downloaded tarball using pip. 
-The setup will install the required python modules which are_
 
 ```
 
@@ -29,7 +28,7 @@ pip install v.0.1.3.tar.gz
 
 ```
 The required python modules (pandas, pysam and psutil) will be installed. 
-You can make sure that everything was installed correcly by typing Ppsy.py within the terminal. 
+You can make sure that everything was installed correcly by typing Ppsy.py within your environment.  
 
 
 ### Other dependencies 
