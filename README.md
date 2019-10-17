@@ -5,7 +5,6 @@ PpsyFinder is pipeline for detecting novel processed pseudogenes using DNA seque
 Processed pseudogenes are structures that are reintroduced into the genome by retrotransposition. This feature is used by Ppsy finder that detects pseudogene candidates by searching for spliced genes withing the genomic sequencing data. Insert positions of the pseudogene candidates are recorded by linking the pseudogene candidate with softclipping (chimeric reads) and read pair insert sizes (chimeric pairs). The idea of this is dependent on an splice aware aligner that allows softclipping and chimeric read pairs. The figure below contains the overall workflow   
 
 
-# Prop need to upload the image ... 
 ![text](/jumbo/WorkingDir/B17-006/Article/PpsyPipeline.jpg)
  
  
