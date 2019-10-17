@@ -4,7 +4,9 @@
 PpsyFinder is pipeline for detecting novel processed pseudogenes using DNA sequencing data (Exomic, Genomic, Targeted gene panels etc). 
 Processed pseudogenes are structures that are reintroduced into the genome by retrotransposition. This feature is used by Ppsy finder that detects pseudogene candidates by searching for spliced genes withing the genomic sequencing data. Insert positions of the pseudogene candidates are recorded by linking the pseudogene candidate with softclipping (chimeric reads) and read pair insert sizes (chimeric pairs). The idea of this is dependent on an splice aware aligner that allows softclipping and chimeric read pairs. The figure below contains the overall workflow   
 
-[](/jumbo/WorkingDir/B17-006/Article/PpsyPipeline.jpg)
+
+# Prop need to upload the image ... 
+![text](/jumbo/WorkingDir/B17-006/Article/PpsyPipeline.jpg)
  
  
 
@@ -50,8 +52,6 @@ conda install -c conda-forge ncurses # (?)
 
 ## How to run 
 
-
-
 Ppsy takes either the two paired quality filtered fastq files or the alignment file as input. In the case the alignment file is the input to the pipeline it is nescessary to run STAR in the following manner. 
 
 ```
@@ -59,7 +59,6 @@ Ppsy takes either the two paired quality filtered fastq files or the alignment f
 STAR --genomeDir /path/to/starindex/ --chimOutType WithinBAM --outSAMunmapped Within --outFilterMultimapNmax 20 --chimSegmentMin 20 --readFilesIn /path/to/file_1.fq /path/to/file_2.fq --outSAMtype BAM SortedByCoordinate --outFileNamePrefix Path/to/OutPrefix/ 
 
 ```
-
 
 The parameters are described below 
 
@@ -91,20 +90,15 @@ Ppsy.py -I /path/to/input.bam -S UniqueOutputname
 
 ```
 
-* Required Parameters when method is Fastq.gz --method Fastq
+* Optional Parameters
 
-  * -R1	Path to fastq1 (required) 
-  * -R2 Path to fastq2 (required)
-  * -STARindex path to the indexed reference genome 
-  * -S Name of the output which all the results are stored, 
-
-
-* Optional Parameters are described below 
-
-  *
-  *
-  *
-  *
+  * --pseudoCandidateDepth (default 5), The minimum depth that supports the splice junctions, this give rise to the processed pseudogene candidates
+  * --InsertDistance (default 200 000), What is the distance from the parent gene where we can have an pseudogene, low distance might increase the amount of detected pseudogenes but will also increase the amount of false positives. A low distance and you might hit inserted pseudogenes in the parent gene itself which is not very likely
+  * --ChimericPairDepthTreshold (default 10), The minimum amount of reads to suppport the chimeric pairs in the left anchor, absolute minimum is 5. 
+  * --ChimericPairBinningTreshold (default 500), When the chimeric pairs are binned into the anchors the binning distance defines the distance for the read to belong to same bin 
+  * --ChimericReadDepthTreshold (default 10), The minimum amount of reads to support the chimeric reads in the fusion site, absolute minimum is 5. 
+  * --ChimericReadBinningTreshold (default 10), When the chimeric reads are binned into the anchors the binning distance defines the distance for the read to belong to same bin
+  * --MergeChimReadWithChimpairTresh (default 100), When we are combining the results from the chimeric pairs and the chimeric reads we combine them if the chimeric read are withing the chimeric pair anchors or the chimeric read are in a user defined distance from the left anchor
   
 
 ## Structure  
