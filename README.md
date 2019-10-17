@@ -46,14 +46,48 @@ conda install -c conda-forge ncurses # (?)
 
 ## How to run 
 
-Ppsy takes either the two paired quality filtered fastq files or the alignment file as input. The parameters are described below 
 
-Tabset {.tabset .tabset-fade .tabset-pills}
-## Tab 1
-text 1
-## Tab 2
-text 2
-### End tabset
+
+Ppsy takes either the two paired quality filtered fastq files or the alignment file as input. In the case the alignment file is the input to the pipeline it is nescessary to run STAR in the following manner. 
+
+```
+
+STAR --genomeDir /path/to/starindex/ --chimOutType WithinBAM --outSAMunmapped Within --outFilterMultimapNmax 20 --chimSegmentMin 20 --readFilesIn /path/to/file_1.fq /path/to/file_2.fq --outSAMtype BAM SortedByCoordinate --outFileNamePrefix Path/to/OutPrefix/ 
+
+```
+
+
+The parameters are described below 
+
+* Required Parameters when method is Fastq.gz --method Fastq
+
+  * -R1	Path to fastq1 (required) 
+  * -R2 Path to fastq2 (required)
+  * -STARindex path to the indexed reference genome 
+  * -S Name of the output which all the results are stored, 
+
+Example command when input is Fastq.gz files
+
+```{python}
+
+Ppsy.py -R1 /path/to/file_1.fq.gz -R2 /path/to/file_2.fq.gz -STARindex /path/to/starindex/ -S UniqueOutputname
+
+```
+
+* Required Parameters when method is Bam --method Bam
+
+  * -I path to Bamfile (required)
+  * -S Name of the output which all the results are stored
+
+Example command when input is a bam file
+
+```{python}
+
+Ppsy.py -I /path/to/input.bam -S UniqueOutputname
+
+```
+
+
 
 
 
