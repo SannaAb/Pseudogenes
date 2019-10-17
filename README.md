@@ -46,6 +46,14 @@ conda install -c conda-forge ncurses # (?)
 
 ## How to run 
 
+Ppsy takes either the two paired quality filtered fastq files or the alignment file as input. The parameters are described below 
+
+Tabset {.tabset .tabset-fade .tabset-pills}
+## Tab 1
+text 1
+## Tab 2
+text 2
+### End tabset
 
 
 
