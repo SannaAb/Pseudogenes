@@ -1,8 +1,12 @@
 # Pseudogenes
 
 ## Introduction  
-Ppsy finder is pipeline for detecting novel processed pseudogenes using DNA sequencing data (Exomic, Genomic, Targeted gene panels etc). 
-Processed pseudogenes are structures that are reintroduced into the genome by retrotransposition. This feature is used by Ppsy finder that detects pseudogene candidates by searching for spliced genes withing the genomic sequencing data. Insert positions of the pseudogene candidates are recorded by linking the pseudogene candidate with softclipping (chimeric reads) and read pair insert sizes (chimeric pairs). The idea of this is dependent on an splice aware aligner that allows softclipping and chimeric read pairs.  
+PpsyFinder is pipeline for detecting novel processed pseudogenes using DNA sequencing data (Exomic, Genomic, Targeted gene panels etc). 
+Processed pseudogenes are structures that are reintroduced into the genome by retrotransposition. This feature is used by Ppsy finder that detects pseudogene candidates by searching for spliced genes withing the genomic sequencing data. Insert positions of the pseudogene candidates are recorded by linking the pseudogene candidate with softclipping (chimeric reads) and read pair insert sizes (chimeric pairs). The idea of this is dependent on an splice aware aligner that allows softclipping and chimeric read pairs. The figure below contains the overall workflow   
+
+![alt text](/jumbo/WorkingDir/B17-006/Article/PpsyPipeline.jpg "PpsyFinder")
+ 
+ 
 
 ## Installation 
 
@@ -87,9 +91,21 @@ Ppsy.py -I /path/to/input.bam -S UniqueOutputname
 
 ```
 
+* Required Parameters when method is Fastq.gz --method Fastq
+
+  * -R1	Path to fastq1 (required) 
+  * -R2 Path to fastq2 (required)
+  * -STARindex path to the indexed reference genome 
+  * -S Name of the output which all the results are stored, 
 
 
+* Optional Parameters are described below 
 
+  *
+  *
+  *
+  *
+  
 
 ## Structure  
 The Ppsy finder consists of two scripts, the Ppsy.py scripts that is the pipeline itself and the script Makeppsyreport.py that outputs a html report for your samples, the results have evidence from both chimeric reads and chimeric pairs. 
