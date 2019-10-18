@@ -26,8 +26,8 @@ When the conda environment for Ppsy is loaded we download the latest version of 
 
 ```
 
-wget https://github.com/SannaAb/Pseudogenes/archive/v.0.1.5.tar.gz
-pip install v.0.1.5.tar.gz
+wget https://github.com/SannaAb/Pseudogenes/archive/v.0.1.7.tar.gz
+pip install v.0.1.7.tar.gz
 
 ```
 The required python modules (pandas, pysam and psutil) will be installed. 
