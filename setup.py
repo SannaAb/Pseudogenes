@@ -13,8 +13,9 @@ setuptools.setup(
     url="https://github.com/SannaAb/Pseudogenes",
     packages=setuptools.find_packages(),
     install_requires=['pandas','pysam','psutil'],
-    package_data={'Ppsy': ['README.md', 'HG19_databases/Exon_coord_hg19_refgene.bed',"HG19_databases/Gene_coord_hg19_refgene.bed","HG19_databases/KnownProcessedPseudogenes_Homo_sapiens.GRCh37.75_CHR.bed","HG19_databases/Ppsy_Config.txt"]
+    package_data={'Ppsy': ['README.md', 'HG19_databases/Exon_coord_hg19_refgene.bed',"HG19_databases/Gene_coord_hg19_refgene.bed","HG19_databases/KnownProcessedPseudogenes_Homo_sapiens.GRCh37.75_CHR.bed"]
                    },
+    data_files= [('HG19_databases',['HG19_databases/Exon_coord_hg19_refgene.bed','HG19_databases/Gene_coord_hg19_refgene.bed','HG19_databases/KnownProcessedPseudogenes_Homo_sapiens.GRCh37.75_CHR.bed'])],
     include_package_data=True,
     classifiers=[
          "Programming Language :: Python :: 2", 
