@@ -20,6 +20,8 @@ import psutil
 from argparse import ArgumentParser, RawTextHelpFormatter
 
 
+# Debugging, if we don't have any candidates i think we should still create the empty file about the pseudogene candidates? 
+
 def parseArgs():
     parser = argparse.ArgumentParser(description='Detects processed pseudogenes by looking at DNA data that splits across the splice junctions',formatter_class=RawTextHelpFormatter)    
     choices_helper = { "Fastq": "Input is Fastq, The pipeline will run STAR for you, method specific parameters are [-R1 Path to Read1, -R2, Path to Read2, -STARindex Path to human reference genome]",
@@ -531,6 +533,11 @@ def Pseuodogenecandidates(Sample,baminput,exoncoords, pseudogenecoords,chrominfo
     commandoverlappwithknowngenes = "intersectBed -wb -a %s -b %s -split | cut -f 7 | sort -n | uniq | cut -f 2- -d \"-\" | sort -n | uniq -c | sed -e 's/^[ \t]*//' | awk '$1 > 2 {print $2}' > %s" % (Cigarbed,exoncoords, Pseudogenecandidates) 
     os.system(commandoverlappwithknowngenes)
     if os.stat(Pseudogenecandidates).st_size==0: # If file is empty, no pseudogenes than you can end the script But first remove tmp files and then count the known processed pseudogenes 
+        # I will still add the output for the pseudogene report but i will keep it empty except for the header, then it will be included in the make ppsy report 
+        summaryOutAnnotatedBoth = Sample + ".ChimPairs_ChimReads.Ppsy.txt" # This is what the output is called
+        MovingList.append(summaryOutAnnotatedBoth)
+        with open(summaryOutAnnotatedBoth, "w") as copyexactcoord:
+            print >> copyexactcoord, "Pseudogene\tP_chrom\tP_start\tP_end\tFus_chrom_left\tFus_start_left\tFus_end_left\tnChimPairs_left\tFus_chrom_right\tFus_start_right\tFus_end_right\tnChimPairs_right\tChimRead_chrom\tChimRead_Start\tChimRead_End\tnChimReads\tInsertDescr\tInsertDescr"
         logging.info('%s\tCleaning...', time.ctime().split(" ")[-2])
         CountKnownPseudogenes(Sample,baminput,pseudogenecoords, MovingList)
         cleaning(Cleaninglist, MovingList,Outputfolder)
