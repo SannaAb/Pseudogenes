@@ -6,8 +6,7 @@ Processed pseudogenes are structures that are reintroduced into the genome by re
 
 
 ![text](/jumbo/WorkingDir/B17-006/Article/PpsyPipeline.jpg)
- 
- 
+  
 
 ## Installation 
 
@@ -100,8 +99,39 @@ Ppsy.py -I /path/to/input.bam -S UniqueOutputname
   * --MergeChimReadWithChimpairTresh (default 100), When we are combining the results from the chimeric pairs and the chimeric reads we combine them if the chimeric read are withing the chimeric pair anchors or the chimeric read are in a user defined distance from the left anchor
   
 
-## Structure  
-The Ppsy finder consists of two scripts, the Ppsy.py scripts that is the pipeline itself and the script Makeppsyreport.py that outputs a html report for your samples, the results have evidence from both chimeric reads and chimeric pairs. 
+## Summary reports 
+
+If you run multiple samples you can run the summary report scripts to obtain an overview of what is found in your samples. 
+There are two scripts in ppsy that will give you this. 
+
+#### html report 
+
+The html report contain the pseudogenes detected in each sample together with the evidence from chimeric reads and pairs that support the pseudogene. Links for the original report and the known pseudogene report is included together with the gviz picures displaying the coverage of the pseudogene and its insert site. 
+
+To construct this report run code as follows
+
+```
+
+# if you use format loose (default) all pseudogenes with corresponding insertsite is reported
+
+MakePPsyReport_html.py -I Sample1_PPsyOut Sample2_PPsyOut -O OUTFOLDER -f loose
+
+# if you use format strict only pseudogenes with chimeric pairs and chimeric read evidence are reported
+
+MakePPsyReport_html.py -I Sample1_PPsyOut Sample2_PPsyOut -O OUTFOLDER -f strict
+
+```
+
+#### excel report
+
+If you use the html report it is important that the original file structure is saved as the report is linking to the output file paths. If you want to get an overview without this drawback from the links you can use the excell report. This report is to prefer if you quickly want to sort the results in different manners. It will contain all hits without any strict filtering. 
+
+```
+
+MakePPsyReport_excel.py -I Sample1_PPsyOut Sample2_PPsyOut -O OUTFOLDER
+
+```
+
 
 
 ## Ppsy Idea 
@@ -162,16 +192,7 @@ The coverage are plotted using GVIZ.
 
 ### Known pseudogene annotation 
 
-The p
-
-
-## Installation
-
-The easieset way of installing the dependencies are to use conda. 
-
-conda create -n PPsy 
-
-## Dependencies 
+The known pseudogenes are annotated
 
 ## Memory Cons... 
 
