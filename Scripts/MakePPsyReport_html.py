@@ -87,8 +87,8 @@ def WritingMainTable(outfolder):
         <th>Report</th>
         <th><p>Known P&Psi;</p></th>
         <th><p>P&Psi;</p></th>
-        <th>ChimRead Count</th>
         <th>ChimPair Count</th>
+        <th>ChimRead Count</th>
         <th>Insert Site</th>
         <th>Plot</th>
     </tr>
