@@ -81,8 +81,6 @@ def WriteTableWithoutLinks(outfolder,SampleFolders):
                             insertranno = l.split("\t")[-1]
                             columns = (Sample,Pseudogene,ChimPairCount,ChimReadCount,insertsite, insertregion,insertranno)
                             worksheet.write_row(rownumber,0, columns)
-        else: 
-            print Sample
     woorkbook.close()
 
     
