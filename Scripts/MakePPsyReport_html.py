@@ -9,7 +9,8 @@ import sys
 import os
 from os import listdir
 #from os.path import isfile, join
-
+import datetime
+import glob
 import argparse
 
 
@@ -54,7 +55,8 @@ font-family: Verdana,Sans-serif;
 }
 
 table, th, td {
-    border: 1px solid black;
+    #border: 1px solid black;
+    border:none;
     text-align: center;
     font-family: Verdana,Sans-serif; 
 }
@@ -63,11 +65,59 @@ tr:nth-child(even) {
     background-color: #dce5ef;
 }
 
+.tooltip {
+  position: relative;
+  display: inline-block;
+  border-bottom: 1px dotted black;
+}
+
+.tooltip .tooltiptext {
+  visibility: hidden;
+  width: 250px;
+  background-color: black;
+  color: #fff;
+  text-align: center;
+  border-radius: 6px;
+  padding: 5px 0;
+    
+  /* Position the tooltip */
+  position: absolute;
+  z-index: 1;
+  bottom: 100%;
+  left: 50%;
+  margin-left: -125px;
+}
+
+
+
+.tooltip:hover .tooltiptext {
+  visibility: visible;
+  font-size: 10px;
+}
+
         """
         
 
-def WritingMainTable(outfolder):
+def WritingMainTable(outfolder,SampleFolders):
     ppsyhtml = outfolder + "/PpsySummaryReport.html"
+    date = str(datetime.datetime.now()).split(":")[0]+":"+str(datetime.datetime.now()).split(":")[1]
+    nsamples = len(SampleFolders)
+    nsampleswithpseudogene = 0 
+    path = "/PpsyReports/*ChimPairs_ChimReads.Ppsy.txt"
+    fullpathtoppsyreport = [s + path for s in SampleFolders] # here we append the full path, just to see how many pseudogenes we detect
+    #Exactfiles = "".join([s for s in "*/PpsyReports/" if ".ChimPairs_ChimReads.Ppsy.txt" in s])
+    #print Exactfile
+    for i in fullpathtoppsyreport:
+        textfile = glob.glob(i)
+        textfile= "".join(textfile)
+        try: 
+            with open(textfile, "r") as report: 
+                if sum(1 for _ in report) > 1: 
+                    
+                    nsampleswithpseudogene +=1 
+        except IOError: 
+            # We dont have the report
+            continue 
     with open(ppsyhtml, "w") as outhtml:
         print >> outhtml, """
 <!DOCTYPE html>
@@ -80,23 +130,36 @@ def WritingMainTable(outfolder):
 <body>
 <h1><p>P&Psi;Finder Summary Report</p></h1>
 <hr> 
-<p>Summary from P&Psi;Finder</p>
+<p>Time for report generation: <strong>%s</strong></p>
+<p>Screening nSamples: <strong>%s</strong></p>
+<p>Detected Pseudogenes in nSamples: <strong>%s</strong> </p>
 <table id="PseudoTable" class="withBorders sortable">
     <tr class = "Columnsnames"> 
-        <th>Sample</th>
-        <th>Report</th>
-        <th><p>Known P&Psi;</p></th>
-        <th><p>P&Psi;</p></th>
-        <th>ChimPair Count</th>
-        <th>ChimRead Count</th>
-        <th>Insert Site</th>
-        <th>Plot</th>
+        <th>
+        <div class="tooltip">Sample
+  <span class="tooltiptext">Analyzed sample</span>
+        </div></th>
+        
+        <th>
+        <div class="tooltip">Report
+  <span class="tooltiptext">Ppsy report for the sample</span>
+        </div></th>
+        <th><p><div class="tooltip"> Known P&Psi;<span class="tooltiptext">Known Ppsy report for the sample</span></div></p> </th>
+        <th><p><div class="tooltip"> P&Psi;<span class="tooltiptext">Detected Pseudogene for the sample</span></div><p></th>
+        <th><div class="tooltip">ChimPair Count<span class="tooltiptext">Amount of left chimeric pairs supporting the insertsite for the specific pseudogene</span></div></th>
+        <th><div class="tooltip">ChimRead Count<span class="tooltiptext">Amount of chimeric reads supporting the insertsite for the specific pseudogene</span></div></th>
+        <th><div class="tooltip">Insert Site<span class="tooltiptext">Insertsite of the Pseudogene, if chimeric reads are not available the insert point is from left chimeric pairs instead</span></div></th>
+        <th><div class="tooltip">Plot<span class="tooltiptext" style="margin-left: -225px;">Coverage plot of the Pseudogene and its insert</span></th>
     </tr>
 
-        """
+        """ % (date,nsamples,nsampleswithpseudogene)
+
+#<tr><td style="border-top:1px solid black;" colspan="8"></td></tr>
+
 def WritingTheRows(SampleFolders,outfolder,form):
+    print "Parsing the html Report ..."
     for m in SampleFolders: 
-        print "Parsing\t%s" %m
+        #print "Parsing\t%s" %m
         ReportFolder = m + "/PpsyReports"
         PlottingFolder = m + "/Plotting"
         outhtmlfile = outfolder + "/PpsySummaryReport.html"
@@ -284,9 +347,8 @@ def WritingTheRows(SampleFolders,outfolder,form):
         """
 
 def main(SampleFolders,outfolder,form):
-    print "Parsing the html report ..."
     Writingtheccs(outfolder)
-    WritingMainTable(outfolder)
+    WritingMainTable(outfolder,SampleFolders)
     WritingTheRows(SampleFolders,outfolder, form)
     print "Done!"
 
