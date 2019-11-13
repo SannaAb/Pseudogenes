@@ -17,7 +17,7 @@ def parseArgs():
     parser = argparse.ArgumentParser(description='Creates the output html from the PPSY run, you descide what you want to display, pseudogenes detected by both evidence chimpairs and chimreads or is it enough with only evidence from one?')
     parser.add_argument('-I','--inputs', dest='SampleFolders',nargs='+',help='Name of the output folder/folders from Ppsy that you want to create the report for (required)',required=True)
     parser.add_argument('-O','--OutputFolder', dest='outfolder', help='Output folder that contains the html report (required)', required=True)
-    parser.add_argument("-f", "--format", type=str, dest='form',choices=['both','all'],help='What will the output report contain? Only output hits that are supported by both chimreads and chimreads or display all if it is supported by either chimreads and chimpairs (required)', default='both')
+    parser.add_argument("-f", "--format", type=str, dest='form',choices=['strict','loose'],help='What will the output report contain? If you choose strict only output hits that are supported by both chimreads and chim pairs are presented if you choose loose all the pseudoenge candidates with their insertsites are presented (required)', default='loose')
     arguments=parser.parse_args(sys.argv[1:])
     return arguments
 
@@ -168,7 +168,7 @@ def WritingTheRows(SampleFolders,outfolder,form):
                         else: 
                             anncolor = "#000000"
 
-                        if form == 'both':
+                        if form == 'strict':
                             if not chimreadCounts == "NA" and not chimpairCounts == "NA":
                                 rowintable+=1
                                 if rowintable == 1:
@@ -212,7 +212,7 @@ def WritingTheRows(SampleFolders,outfolder,form):
                <td>-</td>
              </tr>
                         """ %(Sample,Exactfile, KnownPpsy)                            
-                        elif form == 'all': # We chose to print everything to the ppsy report
+                        elif form == 'loose': # We chose to print everything to the ppsy report
                             if insertsite == "NA:NA-NA": # The clipped reads are NA by evidence so we go for chimpair left anchor instead as the insert coords in the report
                                 insertsite=insertsitechimpair
                             rowintable+=1
