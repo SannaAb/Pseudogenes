@@ -95,6 +95,17 @@ tr:nth-child(even) {
   font-size: 10px;
 }
 
+
+
+/* basic positioning */
+.legend { list-style: none; }
+.legend li { float: left; margin-right: 10px; }
+.legend span { border: 1px solid #ccc; float: left; width: 12px; height: 12px; margin: 2px; }
+/* your colors */
+.legend .intergenic { background-color: #000000; }
+.legend .intronic { background-color: #198b19; }
+.legend .exonic { background-color: #990000; }
+
         """
         
 
@@ -129,10 +140,20 @@ def WritingMainTable(outfolder,SampleFolders):
 </head>
 <body>
 <h1><p>P&Psi;Finder Summary Report</p></h1>
-<hr> 
-<p>Time for report generation: <strong>%s</strong></p>
-<p>Screening nSamples: <strong>%s</strong></p>
-<p>Detected Pseudogenes in nSamples: <strong>%s</strong> </p>
+<hr>
+<p>Time for report generation: <strong>%s</strong>
+<br>Screening nSamples: <strong>%s</strong>
+<br>Detected Pseudogenes in nSamples: <strong>%s</strong> 
+<br>
+</p>
+
+<p>Insert annotation color key:
+<ul class="legend">
+    <li><span class="intergenic"></span> Intergenic</li>
+    <li><span class="intronic"></span> Intronic</li>
+    <li><span class="exonic"></span> Exonic</li>
+</ul>
+</p>
 <table id="PseudoTable" class="withBorders sortable">
     <tr class = "Columnsnames"> 
         <th>
