@@ -99,8 +99,6 @@ def WritingTheRows(SampleFolders,outfolder,form):
         print "Parsing\t%s" %m
         ReportFolder = m + "/PpsyReports"
         PlottingFolder = m + "/Plotting"
-        #CircosFolder = i + "/Circos/CircosPictures"
-        #CircosFolder = os.path.abspath(CircosFolder)
         outhtmlfile = outfolder + "/PpsySummaryReport.html"
         with open(outhtmlfile,"a") as outhtml:
             # Now list all the files in the outputdir of ppsyFinder 
@@ -113,12 +111,18 @@ def WritingTheRows(SampleFolders,outfolder,form):
             
             ### This will be changed! Use a user defined outputName for all your Files 
             SampleNameForAlignmentFile =  Sample + ".r1.fq.gzAligned.sortedByCoord.out" #Obs change This So All intermediate Files will use the user named OutPut file!! 
-            
+            i=0 # Count amount of rows 
             if os.path.isfile(Exactfile): # If the exact coords are there, Write this to the table!
+                
+                
                 with open(Exactfile, "r") as f: # This part return the amount of rows in the file containing the pseudogenes 
                     for i, l in enumerate(f):
                         pass
-                    if i == 1: # obs the file only contains the header, so it is empty then you break it here 
+                    amountofrows=int(i)+1
+                    
+                
+                    
+                    if amountofrows == 1: # obs the file only contains the header, so it is empty then you break it here 
                         print >> outhtml, """
                     <tr>
            <td>%s</td>
