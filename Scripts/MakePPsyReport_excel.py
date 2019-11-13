@@ -13,9 +13,9 @@ import xlsxwriter
 
 
 def parseArgs():
-    parser = argparse.ArgumentParser(description='Creates the Xcell summary reports, one with out links and one with')
+    parser = argparse.ArgumentParser(description='Creates the Xcell summary report')
     parser.add_argument('-I','--inputs', dest='SampleFolders',nargs='+',help='Name of the output folder/folders from Ppsy that you want to create the report for (required)',required=True)
-    parser.add_argument('-O','--OutputFolder', dest='outfolder', help='Output folder that will contain the Excell reports (required)', required=True)
+    parser.add_argument('-O','--OutputFolder', dest='outfolder', help='Output folder that will contain the Excel report (required)', required=True)
     arguments=parser.parse_args(sys.argv[1:])
     return arguments
 
@@ -30,7 +30,8 @@ def WriteTableWithoutLinks(outfolder,SampleFolders):
     """
     This report writes without links so it can be easy passable, no need to keep the path structure
     """
-    outfile = outfolder + "/Ppsy_summary_withoutLinks.xlsx"
+    #outfile = outfolder + "/Ppsy_summary_withoutLinks.xlsx"
+    outfile = outfolder + "/Ppsy_summary.xlsx"
     woorkbook = xlsxwriter.Workbook(outfile)
     worksheet = woorkbook.add_worksheet()
     rownumber = 0
@@ -41,7 +42,7 @@ def WriteTableWithoutLinks(outfolder,SampleFolders):
     rownumber = 0 # We start at this row
     for m in SampleFolders: # Lets loop the sample folders, everything for this report will be in the report of the excell files
         Sample = m.split("_PPsyOut")[0].split("/")[-1]
-        print "Parsing\t%s" %Sample
+        #print "Parsing\t%s" %Sample
         ReportFolder = m + "/PpsyReports"
         filesinReportdir = os.listdir(ReportFolder)
         Exactfile = ReportFolder + "/" + "".join([s for s in filesinReportdir if ".ChimPairs_ChimReads.Ppsy.txt" in s]) # Get the exact coord file and save the string to variable open this file and loops thorugh it, first loop print link to known pseuodegenes and outlog, if the other loop skipt to print this
