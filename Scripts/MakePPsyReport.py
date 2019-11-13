@@ -118,10 +118,7 @@ def WritingTheRows(SampleFolders,outfolder,form):
                 with open(Exactfile, "r") as f: # This part return the amount of rows in the file containing the pseudogenes 
                     for i, l in enumerate(f):
                         pass
-                    amountofrows=int(i)+1
-                    
-                
-                    
+                    amountofrows=int(i)+1                    
                     if amountofrows == 1: # obs the file only contains the header, so it is empty then you break it here 
                         print >> outhtml, """
                     <tr>
@@ -137,8 +134,6 @@ def WritingTheRows(SampleFolders,outfolder,form):
                     """ %(Sample, KnownPpsy)
                         
                         continue
-                    else:
-                        amountofrows = int(i) + 1             
                 with open(Exactfile, "r") as exactcoords:
                     next(exactcoords)# Skip the first row as it contains the header
                     rowintable=0 # Counter to make sure that it is only the first row in the sample that contains the KnownpseudogeneReport and the output Report
@@ -164,15 +159,14 @@ def WritingTheRows(SampleFolders,outfolder,form):
                         PlottingPicturePath =  "../" + PlottingFolder + "/" + PlottingPicture 
                         #print CircosFolder
                         insertanno = strippedline.split("\t")[16]
-                        # Here we change the coloring depending on where the insertsite is, if intergenic green, if intronic blue, if exonic red 
+                        # Here we change the coloring depending on where the insertsite is, if intergenic black, if intronic green, if exonic red 
                         if insertanno == "exonic":
                             anncolor = "#990000"
                         
                         elif insertanno == "intronic":
-                            anncolor = "#0066ff"
-                        
+                            anncolor = "#198b19"
                         else: 
-                            anncolor = "#006600"
+                            anncolor = "#000000"
 
                         if form == 'both':
                             if not chimreadCounts == "NA" and not chimpairCounts == "NA":
