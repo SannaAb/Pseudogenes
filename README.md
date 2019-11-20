@@ -2,10 +2,10 @@
 
 ## Introduction  
 PpsyFinder is pipeline for detecting novel processed pseudogenes using DNA sequencing data (Exomic, Genomic, Targeted gene panels etc). 
-Processed pseudogenes are structures that are reintroduced into the genome by retrotransposition. This feature is used by Ppsy finder that detects pseudogene candidates by searching for spliced genes withing the genomic sequencing data. Insert positions of the pseudogene candidates are recorded by linking the pseudogene candidate with softclipping (chimeric reads) and read pair insert sizes (chimeric pairs). The idea of this is dependent on an splice aware aligner that allows softclipping and chimeric read pairs. The figure below contains the overall workflow   
+Processed pseudogenes are structures that are reintroduced into the genome by retrotransposition. This feature is used by Ppsy finder that detects pseudogene candidates by searching for spliced genes withing the genomic sequencing data. Insert positions of the pseudogene candidates are recorded by linking the pseudogene candidate with softclipping (chimeric reads) and read pair insert sizes (chimeric pairs). The idea of this is dependent on an splice aware aligner that allows softclipping and chimeric read pairs. The figure below contains the overall workflow. 
 
 
-![text](/jumbo/WorkingDir/B17-006/Article/PpsyPipeline.jpg)
+![Pipeline](PpsyPipeline.jpg "Picture displaying the PPsy pipeline")
   
 
 ## Installation 
@@ -122,7 +122,7 @@ MakePPsyReport_html.py -I Sample1_PPsyOut Sample2_PPsyOut -O OUTFOLDER -f strict
 
 ```
 
-#### excel report
+#### Excel report
 
 If you use the html report it is important that the original file structure is saved as the report is linking to the output file paths. If you want to get an overview without this drawback from the links you can use the excell report. This report is to prefer if you quickly want to sort the results in different manners. It will contain all hits without any strict filtering. 
 
@@ -134,16 +134,15 @@ MakePPsyReport_excel.py -I Sample1_PPsyOut Sample2_PPsyOut -O OUTFOLDER
 
 ## Ppsy Idea 
 
-The main goal of PPsy is to detect inserted processed pseudogenes within human DNA sequencing data. The pipeline is utilizing the fact that processed pseudogenes does not contain any introns. Pseudogene candidates are detected as genes contaning spliced reads across the exon exon junctions. The insert site of the pseuedogene candidates are identified with chimeric read pairs and softclipping. 
+The main goal of PPsy is to detect inserted processed pseudogenes within human DNA sequencing data. The pipeline is utilizing the fact that processed pseudogenes does not contain any introns. Pseudogene candidates are detected as genes contaning spliced reads across the exon exon junctions. The insert site of the pseuedogene candidates are identified with chimeric read pairs and chimeric reads. 
+
+The figure belows displays an insertion of a pseuogene within another position in the genome. Reads that maps across the splice juncion of the gene that have been inserted is displayed in the figure below. These reads mapps across the known exon exon of the parent gene. Genes with this form of alignment will be used as a pseudogene candidates. This pseudogene candidates are linked to fusions sites using chimeric pairs and chimeric reads. The reads at the fusion site are colored red. The reads mapping at the pseudogene are colored blue. Chimeric pairs are the read pairs were one of the reads read mapps across at the fusion site and its associated read mapps at the pseudogene itself. The chimeric reads are reads that maps at the splice junctions of the fusion. One part of the read will belong to the fusion site while the other part belong to the pseudogene. 
 
 ![text](TeachingPic3.jpg "Picture that shows a psueudogene insertion")
 
-
-The steps of the pipeline is described below 
-
 ### Discovering Pseudogene candidates 
 
-The Spliced reads are extracted by screening for the cigarN in the alignment file the resulting reads are saved in an alignment file. Regions with a user defined depth (default 5) is extracted from the newly created alignmentfile, extracted regions with overlapp of atleast 2 exons in an exon coord database are saved as our detected pseudogene candidates. When no pseudogene candidates are found the script is killed. 
+The Spliced reads are extracted by screening for the cigarN in the alignment file the resulting reads are saved in an alignment file. Regions with a user defined depth (default 5) is extracted from the newly created alignmentfile, extracted regions with overlapp of atleast 3 exons in an exon coord database are saved as our detected pseudogene candidates. When no pseudogene candidates are found the script is killed. 
 
 ### Clipped read extraction 
 
@@ -154,20 +153,6 @@ Clipped reads are reads that are split so one part of the read mapps at one site
 Chimeric reads are reads with larger insertsize than expected. If pseudogenes candidates were detected the chimeric read pairs are extracted based on a userdefined insertsize treshold, default is 200 000. To small insertsize might increase the amount of false positives. The chimeric read pairs are saved in a new alingment file. 
 
 ### Chimeric read overlapp with Pseudogene candidates 
-
-Chimeric reads within the pseudogene candidates are extracted. The extracted chimeric reads are binned together forming anchor evidence. 
-
-* Pseudogene anchor Left start
-* Pseudogene anchor Left end
-* Fusion Anchor left start
-* Fusion Anchor left end
-
-* Pseudogene anchor Right start
-* Pseudogene anchor Right end
-* Fusion Anchor Right start
-* Fusion Anchor Right end
-
-pic? ()
 
 Reads are binned together if they are not further away then a userdefined distance from the starting point. The default distance is 500. Bins are saved if you have enough reads supporting it. The user defines the treshold (default 10, minimum 5). 
 The first anchors are called the left anchors, if the following read pairs fusionanchor is within the distance from starting out of the fusion but further away then 5000 bp from the pseuendogene anchor we have hit the right anchors. The right anchors are binned in the same manner as the left ones.
@@ -183,17 +168,16 @@ The support for the fusions from both chimeric read pairs and clipped reads are 
 
 ### Fusion point annotation 
 
-The detected fusion points (with atleast evidence from the chimeric pairs or the clipped reads) are annotated using annovar. If the fusionpoint is detected using the clipped reads the clipped read start coord sets the annotation of the fusionpoint. If the fusionpoint does not have evidence from the the clipped reads the Fusion left anchor start point is used. 
+The fusion points are annotated using the ensembl gene annotation for HG19. If the fusionpoint is detected using the clipped reads the clipped read start coord sets the annotation of the fusionpoint. If the fusionpoint does not have evidence from the the clipped reads the Fusion left anchor start point is used. 
 
 ### Plotting 
 
-The coverage are plotted using GVIZ. 
-
+The coverage are plotted using GVIZ by default.
 
 
 ### Known pseudogene annotation 
 
-The known pseudogenes are annotated
+The known pseudogenes are annotated using the known processed pseuodogene coordinates from ensembl (hg19).
 
 ## Memory Cons... 
 
