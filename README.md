@@ -136,8 +136,8 @@ MakePPsyReport_excel.py -I Sample1_PPsyOut Sample2_PPsyOut -O OUTFOLDER
 
 The main goal of PPsy is to detect inserted processed pseudogenes within human DNA sequencing data. The pipeline is utilizing the fact that processed pseudogenes does not contain any introns. Pseudogene candidates are detected as genes contaning spliced reads across the exon exon junctions. The insert site of the pseuedogene candidates are identified with chimeric read pairs and softclipping. 
 
-![text](https://github.com/SannaAb/Pseudogenes/blob/master/Pics/TeachingPic3.tif?raw=true)
-<img src="https://github.com/SannaAb/Pseudogenes/blob/master/Pics/TeachingPic3.tif?raw=true">
+![text](https://github.com/SannaAb/Pseudogenes/blob/master/Pics/TeachingPic3.tiff?raw=true)
+<img src="https://github.com/SannaAb/Pseudogenes/blob/master/Pics/TeachingPic3.tiff?raw=true">
 
 The steps of the pipeline is described below 
 
