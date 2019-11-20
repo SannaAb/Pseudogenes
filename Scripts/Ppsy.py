@@ -662,14 +662,17 @@ bamzoominsert<-DataTrack(range=bamfile, genome = "hg19", name = "Insert Coverage
 aTrack.groups <- AnnotationTrack(start=c(starts), width=c(widths),chromosome="%s", strand=rep("*",length(starts)),group=rep("%s",length(starts)), genome = "hg19", name = "Anno")
 AnnotationTrackinsert<-AnnotationTrack(start=%s, width = %s, strand="*",shape="box",id="%s",genome="hg19", chromosome="%s",name ="Insert", group = "%s")
 
+displayPars(aTrack.groups)<-list(fill="black", col=NULL)
+displayPars(AnnotationTrackinsert)<-list(col=NULL)
+
 pdf("%s") 
 grid.newpage()
 pushViewport(viewport(layout=grid.layout(4, 6)))
 pushViewport(viewport(layout.pos.col=c(1,2,3,4,5,6), layout.pos.row=c(1,2)))
-plotTracks(list(axisTrack,alTrack,alTrack2,aTrack.groups), groupAnnotation="group", just.group=\"above\",from=%s,to=%s,type=c("heatmap","coverage"), sizes=c(1,2,3,0.5),fill.coverage=\"grey\",add=TRUE)
+plotTracks(list(axisTrack,alTrack,alTrack2,aTrack.groups), groupAnnotation="group", just.group=\"above\",from=%s,to=%s,type=c("heatmap","coverage"), sizes=c(1,2,3,0.5),fill.coverage=\"grey\",add=TRUE, ,main="Coverage over the Gene",background.title="white",col.title="black",col.axis="black", cex.main=1.5)
 popViewport(1) 
 pushViewport(viewport(layout.pos.col=c(2.5,5.5), layout.pos.row=4))
-plotTracks(c(bamzoominsert,AnnotationTrackinsert,axisTrack), from=%s,to=%s, fill="darkred", sizes =c(0.5,0.1,0.5), lwd = 1, add=TRUE, panel.only=TRUE, legend=TRUE, groupAnnotation = "id", fill.histogram="darkgrey")    
+plotTracks(c(bamzoominsert,AnnotationTrackinsert,axisTrack), from=%s,to=%s, fill="darkred", sizes =c(0.5,0.1,0.5), lwd = 1, add=TRUE, background.title="white",col.title="black",col.axis="white", groupAnnotation = "id", fill.histogram="darkgrey",col.histogram="darkgrey", main="Coverage over the fusion site", cex.main=1)    
 shhh<-dev.off()
             """ %(startvector,endvector, baminput,Cigarbam ,parentchrom, parentchrom,fuschrom,parentchrom,parentgene,fusionstartplot,fusionwidth,Anno,fuschrom,Anno ,outputPicturepdf,parentgenestart,parentgeneend,fusionrangestart,fusionrangeend)
 
