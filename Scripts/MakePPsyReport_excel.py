@@ -13,7 +13,7 @@ import xlsxwriter
 
 
 def parseArgs():
-    parser = argparse.ArgumentParser(description='Creates the Xcell summary report')
+    parser = argparse.ArgumentParser(description='Creates the Excel summary report')
     parser.add_argument('-I','--inputs', dest='SampleFolders',nargs='+',help='Name of the output folder/folders from Ppsy that you want to create the report for (required)',required=True)
     parser.add_argument('-O','--OutputFolder', dest='outfolder', help='Output folder that will contain the Excel report (required)', required=True)
     arguments=parser.parse_args(sys.argv[1:])
@@ -88,7 +88,7 @@ def WriteTableWithoutLinks(outfolder,SampleFolders):
 
 def main(SampleFolders,outfolder):
     writeOutputFolder(outfolder)
-    print "Parsing the xcell report without hyperlinks ..."
+    print "Parsing the xcell report ..."
     WriteTableWithoutLinks(outfolder,SampleFolders)
     print "Done!"
 
