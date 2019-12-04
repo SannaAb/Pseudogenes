@@ -100,7 +100,10 @@ def database():
     logging.info('%s\tCollecting the paths to the HG19 databases', time.ctime().split(" ")[-2])
     genecoords = os.path.abspath(__file__).split("bin/Ppsy.py")[0] + "HG19_databases/Gene_coord_hg19_refgene.bed"
     exoncoords = os.path.abspath(__file__).split("bin/Ppsy.py")[0] + "HG19_databases/Exon_coord_hg19_refgene.bed"
-    pseudogenecoords = os.path.abspath(__file__).split("bin/Ppsy.py")[0] + "HG19_databases/KnownProcessedPseudogenes_Homo_sapiens.GRCh37.75_CHR.bed"
+    #genecoords = "/home/xabras/.conda/envs/Ppsy/HG19_databases/Gene_coord_hg19_refgene.bed"
+    #exoncoords = "/home/xabras/.conda/envs/Ppsy/HG19_databases/Exon_coord_hg19_refgene.bed"
+    #pseudogenecoords = os.path.abspath(__file__).split("bin/Ppsy.py")[0] + "HG19_databases/KnownProcessedPseudogenes_Homo_sapiens.GRCh37.75_CHR.bed"
+    pseudogenecoords="/home/xabras/.conda/envs/Ppsy/HG19_databases/KnownProcessedPseudogenes_Homo_sapiens.GRCh37.75_CHR.bed"
     return(genecoords,pseudogenecoords,exoncoords)
 
 def CreatingOutputDir(Sample):
@@ -446,7 +449,7 @@ def CombiningClippWithChimericReads(Sample, clippedwithpseudogeneoverlap, Pseudo
     DetectedPseudogenesList = [] # List of Pseudogenes that is evident in both chim reads and pairs. We will use thes pseudogenes for the plots  
     Cleaninglist.append(clipandchimevidence)
     with open(clipandchimevidence, "w") as out: 
-        print >> out, "Pseudogene\tP_chrom\tP_start\tP_end\tFus_chrom_left\tFus_start_left\tFus_end_left\tnChimPairs_left\tFus_chrom_right\tFus_start_right\tFus_end_right\tnChimPairs_right\tChimRead_chrom\tChimRead_Start\tChimRead_End\tnChimReads"         
+        print >> out, "Pseudogene\tP_chrom\tP_start\tP_end\tIS_chrom_left\tIS_start_left\tIS_end_left\tnChimPairs_left\tIS_chrom_right\tIS_start_right\tIS_end_right\tnChimPairs_right\tChimRead_chrom\tChimRead_Start\tChimRead_End\tnChimReads"         
         with open(clippedwithpseudogeneoverlap, "r") as clippedCoord: 
             for cline in clippedCoord:
                 cline = cline.strip() 
@@ -537,7 +540,7 @@ def Pseuodogenecandidates(Sample,baminput,exoncoords, pseudogenecoords,chrominfo
         summaryOutAnnotatedBoth = Sample + ".ChimPairs_ChimReads.Ppsy.txt" # This is what the output is called
         MovingList.append(summaryOutAnnotatedBoth)
         with open(summaryOutAnnotatedBoth, "w") as copyexactcoord:
-            print >> copyexactcoord, "Pseudogene\tP_chrom\tP_start\tP_end\tFus_chrom_left\tFus_start_left\tFus_end_left\tnChimPairs_left\tFus_chrom_right\tFus_start_right\tFus_end_right\tnChimPairs_right\tChimRead_chrom\tChimRead_Start\tChimRead_End\tnChimReads\tInsertDescr\tInsertDescr"
+            print >> copyexactcoord, "Pseudogene\tP_chrom\tP_start\tP_end\tIS_chrom_left\tIS_start_left\tIS_end_left\tnChimPairs_left\tIS_chrom_right\tIS_start_right\tIS_end_right\tnChimPairs_right\tChimRead_chrom\tChimRead_Start\tChimRead_End\tnChimReads\tIS_Region\tIS_Gene"
         logging.info('%s\tCleaning...', time.ctime().split(" ")[-2])
         CountKnownPseudogenes(Sample,baminput,pseudogenecoords, MovingList)
         cleaning(Cleaninglist, MovingList,Outputfolder)
@@ -554,9 +557,10 @@ def CountKnownPseudogenes(Sample,baminput,pseudogenecoords, MovingList):
     Here we annotate the known pseudogenes with bedtools 
     '''
     logging.info('%s\tCounting known pseudogenes... reads overlapping with the pseudogene coords in Ensembl',time.ctime().split(" ")[-2])
-    AmountOfreadsinKnownProcessedPseudogenes = Sample + ".KnownProcessedPseudogenes.Out" 
+    AmountOfreadsinKnownProcessedPseudogenes = Sample + ".KnownProcessedPseudogenes.txt" 
     MovingList.append(AmountOfreadsinKnownProcessedPseudogenes)
-     # Look at the intersect with known processed pseudogenes  
+    # Look at the intersect with known processed pseudogenes  
+    print pseudogenecoords
     bedintersectcommand = "intersectBed -abam %s -b %s -bed -wb" %(baminput, pseudogenecoords)
     capture_overlap_knownProcessedPseudogenes = subprocess.Popen(bedintersectcommand,shell = True, stdout=subprocess.PIPE)
     KnownProcessedPseudogenesList = [] # Create empty list for storing the pseudogene candidates 
@@ -669,13 +673,12 @@ pdf("%s")
 grid.newpage()
 pushViewport(viewport(layout=grid.layout(4, 6)))
 pushViewport(viewport(layout.pos.col=c(1,2,3,4,5,6), layout.pos.row=c(1,2)))
-plotTracks(list(axisTrack,alTrack,alTrack2,aTrack.groups), groupAnnotation="group", just.group=\"above\",from=%s,to=%s,type=c("heatmap","coverage"), sizes=c(1,2,3,0.5),fill.coverage=\"grey\",add=TRUE, ,main="Coverage over the Gene",background.title="white",col.title="black",col.axis="black", cex.main=1.5)
+plotTracks(list(axisTrack,alTrack,alTrack2,aTrack.groups), groupAnnotation="group", just.group=\"above\",from=%s,to=%s,type=c("heatmap","coverage"), sizes=c(1,2,3,0.5),fill.coverage=\"grey\",add=TRUE, main="Coverage over the Gene",background.title="white",col.title="black",col.axis="black", cex.main=1.5)
 popViewport(1) 
 pushViewport(viewport(layout.pos.col=c(2.5,5.5), layout.pos.row=4))
-plotTracks(c(bamzoominsert,AnnotationTrackinsert,axisTrack), from=%s,to=%s, fill="darkred", sizes =c(0.5,0.1,0.5), lwd = 1, add=TRUE, background.title="white",col.title="black",col.axis="white", groupAnnotation = "id", fill.histogram="darkgrey",col.histogram="darkgrey", main="Coverage over the fusion site", cex.main=1)    
+plotTracks(c(bamzoominsert,AnnotationTrackinsert,axisTrack), from=%s,to=%s, fill="darkred", sizes =c(0.5,0.1,0.5), lwd = 1, add=TRUE, background.title="white",col.title="black",col.axis="black", groupAnnotation = "id", fill.histogram="darkgrey",col.histogram="darkgrey", main="Coverage over the insert site", cex.main=1.3)
 shhh<-dev.off()
             """ %(startvector,endvector, baminput,Cigarbam ,parentchrom, parentchrom,fuschrom,parentchrom,parentgene,fusionstartplot,fusionwidth,Anno,fuschrom,Anno ,outputPicturepdf,parentgenestart,parentgeneend,fusionrangestart,fusionrangeend)
-
             command = "Rscript %s" %outputRscript # This part plots using the Gviz plotting
             os.system(command)
             # Cleaning up the outputs
@@ -696,7 +699,7 @@ def AnnotateFusionPoint(Sample,clipandchimevidence,exoncoords,genecoords,Cleanin
     MovingList.append(summaryOutAnnotatedBoth)
     # Calculate the insert within a gene for the fusion 
     with open(summaryOutAnnotatedBoth, "w") as copyexactcoord:
-        print >> copyexactcoord, "Pseudogene\tP_chrom\tP_start\tP_end\tFus_chrom_left\tFus_start_left\tFus_end_left\tnChimPairs_left\tFus_chrom_right\tFus_start_right\tFus_end_right\tnChimPairs_right\tChimRead_chrom\tChimRead_Start\tChimRead_End\tnChimReads\tInsertDescr\tInsertDescr"
+        print >> copyexactcoord, "Pseudogene\tP_chrom\tP_start\tP_end\tIS_chrom_left\tIS_start_left\tIS_end_left\tnChimPairs_left\tIS_chrom_right\tIS_start_right\tIS_end_right\tnChimPairs_right\tChimRead_chrom\tChimRead_Start\tChimRead_End\tnChimReads\tIS_Region\tIS_Genes"
         with open(clipandchimevidence, 'r') as exactcoord: # Loop through a copy of the input file.
             next(exactcoord)
             for line in exactcoord:
@@ -789,7 +792,7 @@ def cleaning(Cleaninglist, MovingList,Outputfolder):
     if os.path.exists(Logout):
         shutil.rmtree(Logout)
     os.makedirs(Logout)
-    logfiles = [f for f in os.listdir(Outputfolder) if f.endswith((".ChimPairs_ChimReads.Ppsy.txt", "_PsudogenewithFusUnfiltered.txt","BinnedPseudoFusExonOverlap.txt",".KnownProcessedPseudogenes.Out"))]
+    logfiles = [f for f in os.listdir(Outputfolder) if f.endswith((".ChimPairs_ChimReads.Ppsy.txt", "_PsudogenewithFusUnfiltered.txt","BinnedPseudoFusExonOverlap.txt",".KnownProcessedPseudogenes.txt"))]
     if logfiles: # If you have something in the list
         for f in logfiles: 
             try:
@@ -803,6 +806,8 @@ def mainBam(baminput,Sample,Psdepth,insdistance,ChimPairDepthTresh,ChimPairBinni
     logging.basicConfig(level=logging.INFO)
     start = time.time()
     logging.info('%s\tStarting Ppsyfinder', time.ctime())
+    CommandLine  = "%s --Method Bam --pseudoCandidateDepth %s --InsertDistance %s --ChimericPairDepthTreshold %s --ChimericPairBinningTreshold %s --ChimericReadDepthTreshold %s --ChimericReadBinningTreshold %s --MergeChimReadWithChimpairTresh %s -S %s -I %s" %(sys.argv[0], arguments.Psdepth,arguments.insdistance, arguments.ChimPairDepthTresh, arguments.ChimPairBinningTresh, arguments.ChimReadDepthTresh, arguments.ChimReadBinningTresh, arguments.chimreadpairdistance, arguments.Sample, arguments.baminput)
+    logging.info('%s\tCommandline\t%s', time.ctime().split(" ")[-2],CommandLine)
     CheckingPaths()
     (genecoords,pseudogenecoords,exoncoords)=database()
     (Cleaninglist, MovingList,Outputfolder)=CreatingOutputDir(Sample)
@@ -835,6 +840,7 @@ def mainFastq(Fastq1,Fastq2,STARindex,Sample,Psdepth,insdistance,ChimPairDepthTr
     logging.basicConfig(level=logging.INFO)
     start = time.time()
     logging.info('%s\tStarting Ppsyfinder, including The Alignment', time.ctime())
+    CommandLine  = "%s --Method Fastq --pseudoCandidateDepth %s --InsertDistance %s --ChimericPairDepthTreshold %s --ChimericPairBinningTreshold %s --ChimericReadDepthTreshold %s --ChimericReadBinningTreshold %s --MergeChimReadWithChimpairTresh %s -STARindex %s -S %s -R1 %s -R2 %s" %(sys.argv[0], arguments.Psdepth,arguments.insdistance, arguments.ChimPairDepthTresh, arguments.ChimPairBinningTresh, arguments.ChimReadDepthTresh, arguments.ChimReadBinningTresh, arguments.chimreadpairdistance, arguments.STARindex,arguments.Sample,arguments.Fastq1, arguments.Fastq2)
     CheckingPaths()
     (genecoords,pseudogenecoords,exoncoords)=database()
     (Cleaninglist, MovingList,Outputfolder)=CreatingOutputDir(Sample)
