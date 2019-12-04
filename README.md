@@ -44,47 +44,74 @@ conda install -c bioconda bioconductor-gviz
 conda install -c conda-forge ncurses # (?)
 
 
-````
+```
 
 ## How to run 
 
-Ppsy takes either the two paired quality filtered fastq files or the alignment file as input. In the case the alignment file is the input to the pipeline it is nescessary to run STAR in the following manner. 
+Ppsy takes either the two paired quality filtered fastq files or the alignment file as input. How to run the tools on either input is described below. 
+
+### How to run Ppsy using the Fastq files as input
+
+If the input to Ppsy is fastq files then you need to create a star index for the human reference genome (hg19). The output index will be used in Ppsy. We suggest that you use the following code snipped for creating an index for the reference genome. Be aware that the indexing step is time consuming and does require a high amount of memory. You only need to create the index once but make sure that you use the same version of star for creating the index that you use for running Ppsy. 
+
 
 ```
 
-STAR --genomeDir /path/to/starindex/ --chimOutType WithinBAM --outSAMunmapped Within --outFilterMultimapNmax 20 --chimSegmentMin 20 --readFilesIn /path/to/file_1.fq /path/to/file_2.fq --outSAMtype BAM SortedByCoordinate --outFileNamePrefix Path/to/OutPrefix/ 
+STAR --runMode genomeGenerate  --genomeFastaFiles /path/to/humangenome19/fasta/file \
+--sjdbGTFfile /path/to/humangenome19/gtf/file --genomeDir /path/to/starindex/
+
+```
+
+When the index is created you can run Ppsy using the following code snipped these are all the required parameters for running Ppsy. 
+
+```
+
+Ppsy.py --method Fastq -STARindex /path/to/starindex/ -S Sample -R1 /path/to/file_1.fq.gz -R2 /path/to/file_2.fq.gz
 
 ```
 
 The parameters are described below 
 
-* Required Parameters when method is Fastq.gz --method Fastq
+* Required Parameters when method is Fastq
 
-  * -R1	Path to fastq1 (required) 
-  * -R2 Path to fastq2 (required)
+  * --Method Fastq 
+  * -R1	Path to fastq1 (required), works for both gziped fastq files and fastq files 
+  * -R2 Path to fastq2 (required), works for both gziped fastq files and fastq files
   * -STARindex path to the indexed reference genome 
-  * -S Name of the output which all the results are stored, 
+  * -S Name of the output which all the results for that sample will be stored 
 
-Example command when input is Fastq.gz files
+### How to run Ppsy using the Bam files as input
 
-```{python}
 
-Ppsy.py -R1 /path/to/file_1.fq.gz -R2 /path/to/file_2.fq.gz -STARindex /path/to/starindex/ -S UniqueOutputname
+If the input to Ppsy is an bam file the file must have been created using star with the chimic reads within option. The resulting alignment file needs to have been mapped towards the human h19 reference genome. An index file for the bam needs to be within the same folder as the bam itself.
+You can tweak the parameters --outFilterMultimapNmax and --chimSegmentMin for your preference but we sugguest to run STAR in the following manner. 
 
 ```
 
-* Required Parameters when method is Bam --method Bam
+STAR --genomeDir /path/to/starindex/ --chimOutType WithinBAM --outSAMunmapped Within --outFilterMultimapNmax 20 --chimSegmentMin 20 \ 
+--outSAMtype BAM SortedByCoordinate --outFileNamePrefix Path/to/OutPrefix/ --readFilesIn path/to/file_1.fq path/to/file_2.fq
 
+```
+
+When you have an alignment file for the hg19 reference genome you run the following code snippet with the required parameters.
+
+
+```{python}
+
+Ppsy.py --method Bam -S Sample -I /path/to/input.bam 
+
+```
+
+* Required Parameters when method is Bam 
+
+  * --method Bam
   * -I path to Bamfile (required)
   * -S Name of the output which all the results are stored
 
-Example command when input is a bam file
 
-```{python}
+### Optional parameters for the methods Bam and Fastq 
 
-Ppsy.py -I /path/to/input.bam -S UniqueOutputname
-
-```
+Below are the optional parameters to use when input is either Fastq or Bam
 
 * Optional Parameters
 
