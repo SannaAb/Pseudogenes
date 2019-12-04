@@ -66,7 +66,8 @@ When the index is created you can run Ppsy using the following code snipped thes
 
 ```
 
-Ppsy.py --method Fastq -STARindex /path/to/starindex/ -S Sample -R1 /path/to/file_1.fq.gz -R2 /path/to/file_2.fq.gz
+Ppsy.py --method Fastq -STARindex /path/to/starindex/ -S Sample \ 
+-R1 /path/to/file_1.fq.gz -R2 /path/to/file_2.fq.gz
 
 ```
 
@@ -80,21 +81,22 @@ The parameters are described below
   * -STARindex path to the indexed reference genome 
   * -S Name of the output which all the results for that sample will be stored 
 
-### How to run Ppsy using the Bam files as input
+### How to run Ppsy using the Bam file as input
 
 
-If the input to Ppsy is an bam file the file must have been created using star with the chimic reads within option. The resulting alignment file needs to have been mapped towards the human h19 reference genome. An index file for the bam needs to be within the same folder as the bam itself.
+If the input to Ppsy is a bam file the file must have been created using STAR with the chimic reads within option. The resulting alignment file need to have been mapped towards the human h19 reference genome. The corresponding index file for the bam need to be within the same folder as the bam itself.
 You can tweak the parameters --outFilterMultimapNmax and --chimSegmentMin for your preference but we sugguest to run STAR in the following manner. 
 
 ```
 
-STAR --genomeDir /path/to/starindex/ --chimOutType WithinBAM --outSAMunmapped Within --outFilterMultimapNmax 20 --chimSegmentMin 20 \ 
---outSAMtype BAM SortedByCoordinate --outFileNamePrefix Path/to/OutPrefix/ --readFilesIn path/to/file_1.fq path/to/file_2.fq
+STAR --genomeDir /path/to/starindex/ --chimOutType WithinBAM --outSAMunmapped Within \
+--outFilterMultimapNmax 20 --chimSegmentMin 20 \ 
+--outSAMtype BAM SortedByCoordinate --outFileNamePrefix Path/to/OutPrefix/ \
+--readFilesIn path/to/file_1.fq path/to/file_2.fq 
 
 ```
 
 When you have an alignment file for the hg19 reference genome you run the following code snippet with the required parameters.
-
 
 ```{python}
 
