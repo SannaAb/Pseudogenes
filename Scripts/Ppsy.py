@@ -102,8 +102,8 @@ def database():
     exoncoords = os.path.abspath(__file__).split("bin/Ppsy.py")[0] + "HG19_databases/Exon_coord_hg19_refgene.bed"
     #genecoords = "/home/xabras/.conda/envs/Ppsy/HG19_databases/Gene_coord_hg19_refgene.bed"
     #exoncoords = "/home/xabras/.conda/envs/Ppsy/HG19_databases/Exon_coord_hg19_refgene.bed"
-    #pseudogenecoords = os.path.abspath(__file__).split("bin/Ppsy.py")[0] + "HG19_databases/KnownProcessedPseudogenes_Homo_sapiens.GRCh37.75_CHR.bed"
-    pseudogenecoords="/home/xabras/.conda/envs/Ppsy/HG19_databases/KnownProcessedPseudogenes_Homo_sapiens.GRCh37.75_CHR.bed"
+    pseudogenecoords = os.path.abspath(__file__).split("bin/Ppsy.py")[0] + "HG19_databases/KnownProcessedPseudogenes_Homo_sapiens.GRCh37.75_CHR.bed"
+    #pseudogenecoords="/home/xabras/.conda/envs/Ppsy/HG19_databases/KnownProcessedPseudogenes_Homo_sapiens.GRCh37.75_CHR.bed"
     return(genecoords,pseudogenecoords,exoncoords)
 
 def CreatingOutputDir(Sample):
