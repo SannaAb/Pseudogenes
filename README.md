@@ -28,7 +28,7 @@ pip install v.0.1.8.tar.gz
 
 ```
 The required python modules (pandas, pysam and psutil) will be installed. 
-You can make sure that everything was installed correcly by typing Ppsy.py within your environment.  
+You can make sure that everything was installed correcly by typing Ppsy.py within your environment.
 
 
 ### Other dependencies 
@@ -121,7 +121,7 @@ Below are the optional parameters to use when input is either Fastq or Bam
   * --InsertDistance (default 200 000), What is the distance from the parent gene where we can have an pseudogene, low distance might increase the amount of detected pseudogenes but will also increase the amount of false positives. A low distance and you might hit inserted pseudogenes in the parent gene itself which is not very likely
   * --ChimericPairDepthTreshold (default 10), The minimum amount of reads to suppport the chimeric pairs in the left anchor, absolute minimum is 5. 
   * --ChimericPairBinningTreshold (default 500), When the chimeric pairs are binned into the anchors the binning distance defines the distance for the read to belong to same bin 
-  * --ChimericReadDepthTreshold (default 10), The minimum amount of reads to support the chimeric reads in the fusion site, absolute minimum is 5. 
+  * --ChimericReadDepthTreshold (default 10), The minimum amount of reads to support the chimeric reads in the insert site, absolute minimum is 5. 
   * --ChimericReadBinningTreshold (default 10), When the chimeric reads are binned into the anchors the binning distance defines the distance for the read to belong to same bin
   * --MergeChimReadWithChimpairTresh (default 100), When we are combining the results from the chimeric pairs and the chimeric reads we combine them if the chimeric read are withing the chimeric pair anchors or the chimeric read are in a user defined distance from the left anchor
   
@@ -182,24 +182,24 @@ Chimeric reads are reads with larger insertsize than expected. If pseudogenes ca
 ### Chimeric read overlapp with Pseudogene candidates 
 
 Reads are binned together if they are not further away then a userdefined distance from the starting point. The default distance is 500. Bins are saved if you have enough reads supporting it. The user defines the treshold (default 10, minimum 5). 
-The first anchors are called the left anchors, if the following read pairs fusionanchor is within the distance from starting out of the fusion but further away then 5000 bp from the pseuendogene anchor we have hit the right anchors. The right anchors are binned in the same manner as the left ones.
+The first anchors are called the left anchors, if the following read pairs insert anchor is within the distance from starting out of the insert but further away then 5000 bp from the pseuendogene anchor we have hit the right anchors. The right anchors are binned in the same manner as the left ones.
 
 ### Clipped reads binning 
 
-The genome coords from the clipped reads are extracted from the clipped alignment file. The clipped reads are saved in ranges if they are within a userdefined distance from the first read (default is 10) for both the first part of the read and the second part of the read. If the amount of user defined supporting reads are enough (default 10, minimum 5) the range is saved. If either part of the read range is within the coordinate as a pseodogenecandidate the softclipping funsionpoint is saved. 
+The genome coords from the clipped reads are extracted from the clipped alignment file. The clipped reads are saved in ranges if they are within a userdefined distance from the first read (default is 10) for both the first part of the read and the second part of the read. If the amount of user defined supporting reads are enough (default 10, minimum 5) the range is saved. If either part of the read range is within the coordinate as a pseodogenecandidate the softclipping insert point is saved. 
 
 ### Combining clipped reads with chimeric read pairs evidence 
 
 The support for the fusions from both chimeric read pairs and clipped reads are combined. The optimal fusion have evidence from both chimeric read pairs (both the left and the right anchor) and the clipped reads. 
 
 
-### Fusion point annotation 
+### Insert point annotation 
 
-The fusion points are annotated using the ensembl gene annotation for HG19. If the fusionpoint is detected using the clipped reads the clipped read start coord sets the annotation of the fusionpoint. If the fusionpoint does not have evidence from the the clipped reads the Fusion left anchor start point is used. 
+The insert points are annotated using the ensembl gene annotation for HG19. If the fusionpoint is detected using the clipped reads the clipped read start coord sets the annotation of the insert point. If the insert point does not have evidence from the the clipped reads the insert left anchor start point is used. 
 
 ### Plotting 
 
-The coverage are plotted using GVIZ by default.
+The coverage is plotted using GVIZ by default.
 
 
 ### Known pseudogene annotation 
