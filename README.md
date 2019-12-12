@@ -69,7 +69,9 @@ The plotting folder also contains the scripts made for creating the plots. You c
 * PpsyReports
 
 *.KnownProcessedPseudogenes.txt* contains the read counts across known processed pseudogenes towards the reference HG19 from ENSEMBL.  
+
 *.ChimPairs_ChimReads.Ppsy.txt* is the main table from PPsyFinder. The columns are listed below 
+
 
 	1. Pseudogene, Parent gene name 
 	2. P_chrom, Parent chromsome location
