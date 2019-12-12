@@ -55,14 +55,40 @@ There are 3 folders in total within the result folder.
 
 Contains the 3 alignment files created in the pipeline together with their index files
 
-'''*ChimericReadPairs.bam* contains the aligned chimeric read pars''
-'''*Clipped.bam* contains the aligned chimeric reads, (softclipped reads)''
-'''*extractedN.* contains the aligned spliced reads, this are the ones that defines pseudogene candidates''
+*ChimericReadPairs.bam* contains the aligned chimeric read pars  
+*Clipped.bam* contains the aligned chimeric reads, (softclipped reads)  
+*extractedN.* contains the aligned spliced reads, this are the ones that defines pseudogene candidates  
 
 
+* Plotting 
 
+Contains pdf and png for the pseudogenes with their insert sites. Important to note here is that the plot across the Parentgene is the same for the same pseudogene with different insert sites. This is because we cannot differ coverage over parent with the different inserts, the insertplot with its coverage is unique. 
 
+The plotting folder also contains the scripts made for creating the plots. You can tweak these to your liking but don't forget to change the paths to the input files as these are changing as the files are moved in the final cleaning step of the pipeline. 
 
+* PpsyReports
+
+*.KnownProcessedPseudogenes.txt* contains the read counts across known processed pseudogenes towards the reference HG19 from ENSEMBL.  
+*.ChimPairs_ChimReads.Ppsy.txt* is the main table from PPsyFinder. The columns are listed below 
+
+	1. Pseudogene, Parent gene name 
+	2. P_chrom, Parent chromsome location
+	3. P_start, Parent start
+	4. P_end, Parent end 
+	5. IS_chrom_left, Insert site, left chromosome 
+	6. IS_start_left, Insert site, start left based on the chimeric pairs
+	7. IS_end_left, Insert site, end left based on the chimeric pairs
+	8. nChimPairs_left, Amount of supporting reads for the lefth anchor
+	9. IS_chrom_right, Insert site, right chromosome 
+	10. IS_start_right,  Insert site, start right based on the chimeric pairs
+	11. IS_end_right, Insert site, end right based on the chimeric pairs
+	12. nChimPairs_right, Amount of supporting reads for the right anchor 
+	13. ChimRead_chrom, Insert site chromosome for the chimeric reads
+	14. ChimRead_Start, Insert site start for the chimeric reads
+	15. ChimRead_End, insert site end for the chimeric reads
+	16. nChimReads, Amount of supporting reads across the chimeric read fusion 
+	17. IS_Region, Insert annotation for the region, Is it intronic, exonic or intergenic? 
+	18. IS_Genes, Insert annotation if the pseudogene if it is inserted within a gene 
 
 ## How to run 
 
