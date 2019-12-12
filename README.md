@@ -47,6 +47,23 @@ conda install -c conda-forge ncurses # (?)
 
 ```
 
+## Output
+
+The outputs of Ppsy is within the Outputfolder which you stated as the Sample Parameter in the run. 
+There are 3 folders in total within the result folder. 
+* Alignments 
+
+Contains the 3 alignment files created in the pipeline together with their index files
+
+'''*ChimericReadPairs.bam* contains the aligned chimeric read pars''
+'''*Clipped.bam* contains the aligned chimeric reads, (softclipped reads)''
+'''*extractedN.* contains the aligned spliced reads, this are the ones that defines pseudogene candidates''
+
+
+
+
+
+
 ## How to run 
 
 Ppsy takes either the two paired quality filtered fastq files or the alignment file as input. How to run the tools on either input is described below. 
@@ -126,23 +143,6 @@ Below are the optional parameters to use when input is either Fastq or Bam
   * --ChimericReadBinningTreshold (default 10), When the chimeric reads are binned into the anchors the binning distance defines the distance for the read to belong to same bin
   * --MergeChimReadWithChimpairTresh (default 100), When we are combining the results from the chimeric pairs and the chimeric reads we combine them if the chimeric read are withing the chimeric pair anchors or the chimeric read are in a user defined distance from the left anchor
   
-## Output
-
-The outputs of Ppsy is within the Outputfolder which you stated as the Sample Parameter in the run. 
-There are 3 folders in total within the result folder. 
-* Alignments 
-
-Contains the 3 alignment files created in the pipeline together with their index files
-
-... *ChimericReadPairs.bam* contains the aligned chimeric read pars..  
-... *.Clipped.bam* contains the aligned chimeric reads, (softclipped reads)..  
-... *extractedN.* contains the aligned spliced reads, this are the ones that defines pseudogene candidates..  
-
-
-
-
-
-
 ## Summary reports 
 
 If you run multiple samples you can run the summary report scripts to obtain an overview of what is found in your samples. 
