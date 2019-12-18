@@ -69,7 +69,7 @@ Contains pdf and png for the pseudogenes with their insert sites. Important to n
 
 The plotting folder also contains the scripts made for creating the plots. You can tweak these to your liking but don't forget to change the paths to the input files as these are changing as the files are moved in the final cleaning step of the pipeline. 
 
-![CoveragePlot](SMADinSCAIpic.jpg "Pseudogene SMAD4 inserted into SCAI")
+![CoveragePlot](SMADinSCAIpic.jpg "Pseudogene SMAD4 inserted into SCAI")  
 **Figure 2**: Coverage plot using GVIZ in R. The first track is a heatmap containing the coverage across the entire parent gene, darker blue means higher coverage. The second track is a histogram for the coverage of the spliced reads across the parent gene. This is evidence of a processed pseudogene.The third track is a histogram of the coverage over the insert site where this pseudogene from the parent gene is inserted.
 
 * PpsyReports
@@ -199,6 +199,8 @@ MakePPsyReport_html.py -I Sample1_PPsyOut Sample2_PPsyOut -O OUTFOLDER -f strict
 
 ```
 
+Very important to note is that you need to keep the file structure if you are moving the report to a different folders. Otherwise the links will break. 
+
 #### Excel report
 
 If you use the html report it is important that the original file structure is saved as the report is linking to the output file paths. If you want to get an overview without this drawback from the links you can use the excel report. This report is to prefer if you want to sort the results in different manners. It will contain all hits without any strict filtering. 
@@ -211,11 +213,11 @@ MakePPsyReport_excel.py -I Sample1_PPsyOut Sample2_PPsyOut -O OUTFOLDER
 
 ## PΨFinder Idea 
 
-The main goal of PΨFinder is to detect inserted processed pseudogenes within human DNA sequencing data. The pipeline is utilizing the fact that processed pseudogenes does not contain any introns. Pseudogene candidates are detected as genes contaning spliced reads across the exon exon junctions. The insert site of the pseuedogene candidates are identified with chimeric read pairs and chimeric reads. 
+The main goal of PΨFinder is to detect inserted processed pseudogenes within human DNA sequencing data. The pipeline is utilizing the fact that processed pseudogenes does not contain any introns. Pseudogene candidates are detected as genes contaning spliced reads across the exon exon junctions. The insert site of the pseuedogene candidates are identified with chimeric read pairs and chimeric reads. See figure 3 for more details. 
 
-The figure belows displays an insertion of a pseuogene within another position in the genome. Reads that maps across the splice juncion of the gene that have been inserted is displayed in the figure below. These reads mapps across the known exon exon of the parent gene. Genes with this form of alignment will be used as a pseudogene candidates. This pseudogene candidates are linked to fusions sites using chimeric pairs and chimeric reads. The reads at the fusion site are colored red. The reads mapping at the pseudogene are colored blue. Chimeric pairs are the read pairs were one of the reads read mapps across at the fusion site and its associated read mapps at the pseudogene itself. The chimeric reads are reads that maps at the splice junctions of the fusion. One part of the read will belong to the fusion site while the other part belong to the pseudogene. 
+![text](TeachingPic3.jpg "Picture that shows a psueudogene insertion")  
+**Figure 3**: The figure displays an insertion of a pseuogene within another position in the genome. Reads that maps across the splice juncion of the gene that have been inserted is displayed in the figure below. These reads mapps across the known exon exon of the parent gene. Genes with this form of alignment will be used as a pseudogene candidates. This pseudogene candidates are linked to fusions sites using chimeric pairs and chimeric reads. The reads at the fusion site are colored red. The reads mapping at the pseudogene are colored blue. Chimeric pairs are the read pairs were one of the reads read mapps across at the fusion site and its associated read mapps at the pseudogene itself. The chimeric reads are reads that maps at the splice junctions of the fusion. One part of the read will belong to the fusion site while the other part belong to the pseudogene. 
 
-![text](TeachingPic3.jpg "Picture that shows a psueudogene insertion")
 
 ### Discovering Pseudogene candidates 
 
