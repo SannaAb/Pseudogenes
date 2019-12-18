@@ -2,7 +2,7 @@
 
 ## Introduction  
 PΨFinder is pipeline for detecting novel processed pseudogenes using DNA sequencing data (Exomic, Genomic, Targeted gene panels etc). 
-Processed pseudogenes are structures that are reintroduced into the genome by retrotransposition. This feature is used by PΨFinder that detects pseudogene candidates by searching for spliced genes withing the genomic sequencing data. Insert positions of the pseudogene candidates are recorded by linking the pseudogene candidate with softclipping (chimeric reads) and read pair insert sizes (chimeric pairs). The idea of this is dependent on an splice aware aligner that allows softclipping and chimeric read pairs. See figure 1 for the overall workflow. 
+Processed pseudogenes are structures that are reintroduced into the genome by retrotransposition. This feature is used by PΨFinder that detects pseudogene candidates by searching for spliced genes withing the genomic sequencing data. Insert positions of the pseudogene candidates are recorded by linking the pseudogene candidate with softclipping (chimeric reads) and read pair insert sizes (chimeric pairs). The idea of this is dependent on an splice aware aligner that allows softclipping and chimeric read pairs. See *Figure 1* for the the overall workflow. 
 
 ![Pipeline](Workflow2.jpg "Picture displaying the PPsy pipeline")
 **Figure 1**: The workflow of PΨFinder. Input is either BAM or Fastq. The pipeline extracts pseudogene candidates by looking at reads spliced across known exon exon juntions. Then it uses chimeric reads (softclipped reads) and chimeric pairs for intersecting the pseudogenecandidates with the insert site. It reports the detected novel pseudogenes together with a report for found known processed pseudogenes. 
@@ -11,9 +11,8 @@ Processed pseudogenes are structures that are reintroduced into the genome by re
 
 ## Installation 
 
-The recommended way of installing the tool is through Anaconda. 
-
-First step is to create a conda evironment for Ppsy which builts upon python 2.7 and load the newly built conda environment using source activate 
+The recommended way of installing the tool is through Anaconda.  
+First step is to create a conda evironment for PΨFinder which builts upon *python 2.7* and load the newly built conda environment using source activate 
 
 ```
 
@@ -65,7 +64,7 @@ Contains the 3 alignment files created in the pipeline together with their index
 
 * Plotting 
 
-Contains pdf and png for the pseudogenes with their insert sites. Important to note here is that the plot across the Parentgene is the same for the same pseudogene with different insert sites. This is because we cannot differ coverage over parent with the different inserts, the insertplot with its coverage is unique. An example of an output plot is displayed in figure 2. 
+Contains pdf and png for the pseudogenes with their insert sites. Important to note here is that the plot across the Parentgene is the same for the same pseudogene with different insert sites. This is because we cannot differ coverage over parent with the different inserts, the insertplot with its coverage is unique. An example of an output plot is displayed in *Figure 2*. 
 
 The plotting folder also contains the scripts made for creating the plots. You can tweak these to your liking but don't forget to change the paths to the input files as these are changing as the files are moved in the final cleaning step of the pipeline. 
 
@@ -213,7 +212,7 @@ MakePPsyReport_excel.py -I Sample1_PPsyOut Sample2_PPsyOut -O OUTFOLDER
 
 ## PΨFinder Idea 
 
-The main goal of PΨFinder is to detect inserted processed pseudogenes within human DNA sequencing data. The pipeline is utilizing the fact that processed pseudogenes does not contain any introns. Pseudogene candidates are detected as genes contaning spliced reads across the exon exon junctions. The insert site of the pseuedogene candidates are identified with chimeric read pairs and chimeric reads. See figure 3 for more details. 
+The main goal of PΨFinder is to detect inserted processed pseudogenes within human DNA sequencing data. The pipeline is utilizing the fact that processed pseudogenes does not contain any introns. Pseudogene candidates are detected as genes contaning spliced reads across the exon exon junctions. The insert site of the pseuedogene candidates are identified with chimeric read pairs and chimeric reads. See *Figure 3* for more details. 
 
 ![text](TeachingPic3.jpg "Picture that shows a psueudogene insertion")  
 **Figure 3**: The figure displays an insertion of a pseuogene within another position in the genome. Reads that maps across the splice juncion of the gene that have been inserted is displayed in the figure below. These reads mapps across the known exon exon of the parent gene. Genes with this form of alignment will be used as a pseudogene candidates. This pseudogene candidates are linked to fusions sites using chimeric pairs and chimeric reads. The reads at the fusion site are colored red. The reads mapping at the pseudogene are colored blue. Chimeric pairs are the read pairs were one of the reads read mapps across at the fusion site and its associated read mapps at the pseudogene itself. The chimeric reads are reads that maps at the splice junctions of the fusion. One part of the read will belong to the fusion site while the other part belong to the pseudogene. 
@@ -251,7 +250,7 @@ The insert points are annotated using the ensembl gene annotation for HG19. If t
 
 ### Plotting 
 
-The coverage is plotted using GVIZ by default.
+The coverage is plotted using GVIZ in R.
 
 
 ### Known pseudogene annotation 
