@@ -1,12 +1,12 @@
-# Pseudogenes
+# PΨFinder
 
 ## Introduction  
-PpsyFinder is pipeline for detecting novel processed pseudogenes using DNA sequencing data (Exomic, Genomic, Targeted gene panels etc). 
-Processed pseudogenes are structures that are reintroduced into the genome by retrotransposition. This feature is used by Ppsy finder that detects pseudogene candidates by searching for spliced genes withing the genomic sequencing data. Insert positions of the pseudogene candidates are recorded by linking the pseudogene candidate with softclipping (chimeric reads) and read pair insert sizes (chimeric pairs). The idea of this is dependent on an splice aware aligner that allows softclipping and chimeric read pairs. See figure 1 for the overall workflow. 
+PΨFinder is pipeline for detecting novel processed pseudogenes using DNA sequencing data (Exomic, Genomic, Targeted gene panels etc). 
+Processed pseudogenes are structures that are reintroduced into the genome by retrotransposition. This feature is used by PΨFinder that detects pseudogene candidates by searching for spliced genes withing the genomic sequencing data. Insert positions of the pseudogene candidates are recorded by linking the pseudogene candidate with softclipping (chimeric reads) and read pair insert sizes (chimeric pairs). The idea of this is dependent on an splice aware aligner that allows softclipping and chimeric read pairs. See figure 1 for the overall workflow. 
 
 ![Pipeline](Workflow2.jpg "Picture displaying the PPsy pipeline")
-**Figure 1**
-The overall workflow of PΨFinder
+**Figure 1**: The workflow of PΨFinder. Input is either BAM or Fastq. The pipeline extracts pseudogene candidates by looking at reads spliced across known exon exon juntions. Then it uses chimeric reads (softclipped reads) and chimeric pairs for intersecting the pseudogenecandidates with the insert site. It reports the detected novel pseudogenes together with a report for found known processed pseudogenes. 
+
 
 
 ## Installation 
@@ -22,7 +22,7 @@ source activate Ppsy
 
 ```
 
-When the conda environment for Ppsy is loaded we download the latest version of the tar.ball from the Ppsy github repo and install the downloaded tarball using pip. 
+When the conda environment for PΨFinder is loaded we download the latest version of the tar.ball from the PΨFinder github repo and install the downloaded tarball using pip. 
 
 ```
 
@@ -52,7 +52,7 @@ conda install -c conda-forge ncurses # (?)
 
 ## Output
 
-The outputs of Ppsy is within the Outputfolder which you stated as the Sample Parameter in the run. 
+The outputs of PΨFinder are within the Outputfolder which you stated as the Sample Parameter in the run. 
 There are 3 folders in total within the result folder. 
 * Alignments 
 
@@ -65,19 +65,18 @@ Contains the 3 alignment files created in the pipeline together with their index
 
 * Plotting 
 
-Contains pdf and png for the pseudogenes with their insert sites. Important to note here is that the plot across the Parentgene is the same for the same pseudogene with different insert sites. This is because we cannot differ coverage over parent with the different inserts, the insertplot with its coverage is unique. 
+Contains pdf and png for the pseudogenes with their insert sites. Important to note here is that the plot across the Parentgene is the same for the same pseudogene with different insert sites. This is because we cannot differ coverage over parent with the different inserts, the insertplot with its coverage is unique. An example of an output plot is displayed in figure 2. 
 
 The plotting folder also contains the scripts made for creating the plots. You can tweak these to your liking but don't forget to change the paths to the input files as these are changing as the files are moved in the final cleaning step of the pipeline. 
 
 ![CoveragePlot](SMADinSCAIpic.jpg "Pseudogene SMAD4 inserted into SCAI")
-
-
+**Figure 2**: Coverage plot using GVIZ in R. The first track is a heatmap containing the coverage across the entire parent gene, darker blue means higher coverage. The second track is a histogram for the coverage of the spliced reads across the parent gene. This is evidence of a processed pseudogene.The third track is a histogram of the coverage over the insert site where this pseudogene from the parent gene is inserted.
 
 * PpsyReports
 
 *.KnownProcessedPseudogenes.txt* contains the read counts across known processed pseudogenes towards the reference HG19 from ENSEMBL.  
 
-*.ChimPairs_ChimReads.Ppsy.txt* is the main table from PPsyFinder. The columns are listed below 
+*.ChimPairs_ChimReads.Ppsy.txt* is the main table from PΨFinder. The columns are listed below 
 
 
 	1. Pseudogene, Parent gene name 
@@ -101,11 +100,11 @@ The plotting folder also contains the scripts made for creating the plots. You c
 
 ## How to run 
 
-Ppsy takes either the two paired quality filtered fastq files or the alignment file as input. How to run the tools on either input is described below. 
+PΨFinder takes either the two paired quality filtered fastq files or the alignment file as input. How to run the tools on either input is described below. 
 
-### How to run Ppsy using the Fastq files as input
+### How to run PΨFinder using the Fastq files as input
 
-If the input to Ppsy is fastq files then you need to create a star index for the human reference genome (hg19). The output index will be used in Ppsy. We suggest that you use the following code snipped for creating an index for the reference genome. Be aware that the indexing step is time consuming and does require a high amount of memory. You only need to create the index once but make sure that you use the same version of star for creating the index that you use for running Ppsy. 
+If the input to PΨFinder is fastq files then you need to create a star index for the human reference genome (hg19). The output index will be used in PΨFinder. We suggest that you use the following code snipped for creating an index for the reference genome. Be aware that the indexing step is time consuming and does require a high amount of memory. You only need to create the index once but make sure that you use the same version of star for creating the index that you use for running PΨFinder. 
 
 
 ```
@@ -115,7 +114,7 @@ STAR --runMode genomeGenerate  --genomeFastaFiles /path/to/humangenome19/fasta/f
 
 ```
 
-When the index is created you can run Ppsy using the following code snipped these are all the required parameters for running Ppsy. 
+When the index is created you can run Ppsy using the following code snipped these are all the required parameters for running PΨFinder. 
 
 ```
 
@@ -134,10 +133,9 @@ The parameters are described below
   * -STARindex path to the indexed reference genome 
   * -S Name of the output which all the results for that sample will be stored 
 
-### How to run Ppsy using the Bam file as input
+### How to run PΨFinder using the Bam file as input
 
-
-If the input to Ppsy is a bam file the file must have been created using STAR with the chimic reads within option. The resulting alignment file need to have been mapped towards the human h19 reference genome. The corresponding index file for the bam need to be within the same folder as the bam itself.
+If the input to PΨFinder is a bam file the file must have been created using STAR with the chimic reads within option. The resulting alignment file need to have been mapped towards the human h19 reference genome. The corresponding index file for the bam need to be within the same folder as the bam itself.
 You can tweak the parameters --outFilterMultimapNmax and --chimSegmentMin for your preference but we sugguest to run STAR in the following manner. 
 
 ```
@@ -203,7 +201,7 @@ MakePPsyReport_html.py -I Sample1_PPsyOut Sample2_PPsyOut -O OUTFOLDER -f strict
 
 #### Excel report
 
-If you use the html report it is important that the original file structure is saved as the report is linking to the output file paths. If you want to get an overview without this drawback from the links you can use the excell report. This report is to prefer if you quickly want to sort the results in different manners. It will contain all hits without any strict filtering. 
+If you use the html report it is important that the original file structure is saved as the report is linking to the output file paths. If you want to get an overview without this drawback from the links you can use the excel report. This report is to prefer if you want to sort the results in different manners. It will contain all hits without any strict filtering. 
 
 ```
 
@@ -211,9 +209,9 @@ MakePPsyReport_excel.py -I Sample1_PPsyOut Sample2_PPsyOut -O OUTFOLDER
 
 ```
 
-## Ppsy Idea 
+## PΨFinder Idea 
 
-The main goal of PPsy is to detect inserted processed pseudogenes within human DNA sequencing data. The pipeline is utilizing the fact that processed pseudogenes does not contain any introns. Pseudogene candidates are detected as genes contaning spliced reads across the exon exon junctions. The insert site of the pseuedogene candidates are identified with chimeric read pairs and chimeric reads. 
+The main goal of PΨFinder is to detect inserted processed pseudogenes within human DNA sequencing data. The pipeline is utilizing the fact that processed pseudogenes does not contain any introns. Pseudogene candidates are detected as genes contaning spliced reads across the exon exon junctions. The insert site of the pseuedogene candidates are identified with chimeric read pairs and chimeric reads. 
 
 The figure belows displays an insertion of a pseuogene within another position in the genome. Reads that maps across the splice juncion of the gene that have been inserted is displayed in the figure below. These reads mapps across the known exon exon of the parent gene. Genes with this form of alignment will be used as a pseudogene candidates. This pseudogene candidates are linked to fusions sites using chimeric pairs and chimeric reads. The reads at the fusion site are colored red. The reads mapping at the pseudogene are colored blue. Chimeric pairs are the read pairs were one of the reads read mapps across at the fusion site and its associated read mapps at the pseudogene itself. The chimeric reads are reads that maps at the splice junctions of the fusion. One part of the read will belong to the fusion site while the other part belong to the pseudogene. 
 
