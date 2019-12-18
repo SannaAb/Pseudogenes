@@ -6,9 +6,8 @@ Processed pseudogenes are structures that are reintroduced into the genome by re
 
 ![Pipeline](Workflow2.jpg "Picture displaying the PPsy pipeline")
 **Figure 1**
-The overall workflow of PPsyFinder U03A8
+The overall workflow of PΨFinder
 
-: "Ψ"
 
 ## Installation 
 
