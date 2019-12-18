@@ -66,8 +66,10 @@ Contains pdf and png for the pseudogenes with their insert sites. Important to n
 
 The plotting folder also contains the scripts made for creating the plots. You can tweak these to your liking but don't forget to change the paths to the input files as these are changing as the files are moved in the final cleaning step of the pipeline. 
 
-
+<center>
 ![CoveragePlot](SMADinSCAIpic.jpg "Pseudogene SMAD4 inserted into SCAI")
+</center>
+
 
 * PpsyReports
 
