@@ -84,13 +84,12 @@ def CreatesIntermediateFilesCircos(Sample,baminput,parentcoord,insertsite,genena
     # Get coverage of the ordinary bam, this might break due to large amount of data 
     command = "coverageBed -sorted -b %s -a %s -d -split -g %s | awk 'OFS=\" \" {print $4,$5-1,$5-1,$6}' > %s" %(baminput, exactcoordbed,genomefile,covoverbam_circosformat)
     # Turning this off for now! As we have it and it is slow 
-    #os.system(command) 
+    os.system(command) 
     print "Extract from rawbam, coverage over Fusion" 
     # Obs we cannot have : in the identifier so these are replaced with - 
     command = "coverageBed -sorted -b %s -a %s -d -split -g %s | awk 'OFS=\" \" {print $4,$5-1,$5-1,$6}' | sed 's/:/-/g' > %s" %(baminput,insertcoordbed,genomefile,covoverbamInsert_circosformat)
     # Turning this off for now! As we have it and it is slow
-    #os.system(command)
-    
+    os.system(command)
     print "Extract from SpliceRead bam"
     command = "coverageBed -sorted -b %s -a %s -d -split -g %s | awk 'OFS=\" \" {print $4,$5-1,$5-1,$6}' > %s" %(bamparentgeneCigarN, exactcoordbed,genomefile,covoversplitbam_circosformat)
     os.system(command)
