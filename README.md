@@ -25,9 +25,9 @@ When the conda environment for PΨFinder is loaded we download the latest versio
 
 ```
 
-wget https://github.com/SannaAb/Pseudogenes/archive/v.0.2.tar.gz
+wget https://github.com/SannaAb/Pseudogenes/archive/v.0.2.1.tar.gz
 
-pip install v.0.2.tar.gz
+pip install v.0.2.1.tar.gz
 
 ```
 The required python modules (pandas, pysam and psutil) will be installed. 
@@ -45,7 +45,6 @@ conda install -c conda-forge -c bioconda samtools bzip2
 conda install -c bioconda star
 conda install -c bioconda bioconductor-gviz
 conda install -c conda-forge ncurses # (?)
-
 
 ```
 
@@ -209,6 +208,33 @@ If you use the html report it is important that the original file structure is s
 MakePPsyReport_excel.py -I Sample1_PPsyOut Sample2_PPsyOut -O OUTFOLDER
 
 ```
+
+## Optional plotting 
+
+PΨFinder gives one addtional way of visualizing your results in the form of a circos plot. Before running the command below make sure that circos is installed on you system and that the path to the exec of circos is within your path. 
+
+![text](SMAD4_SMAD4.png, Picture that displays the coverage over the insertion and the Parent gene)
+
+```
+
+CreateCircosImageFromPpsyOut.py -S Sample -rawBam /path/to/input.bam -ParentgeneCoordinate chrN:start-end -Insertsite chrN:start-end -GeneName NameOfPseudogene
+
+```
+
+*Sample*  
+Sets the prefix used as an output, the script will make a folder and put all output files into that folder from this script so make sure that the Sample name is unique. 
+
+*rawBam*  
+Is the alignment file created by star contaning the original alignment. This was either created with STAR before the user run PΨFinder or within PΨFinder when the user used the method flag Fastq. 
+
+*ParentgeneCoordinate*  
+Is the coordinates of the original parent gene. The scripts needs these coordinates to plot the coverage over the parent gene. 
+
+*Insertsite*  
+Is the coordinates of the insertsite of the pseudogene. The user can define any range of this insert but the script will add 200 nucleotides on each side of the insert site to increase the range of the plotting. 
+
+*GeneName*  
+The gene name is the exact name of the parent gene, it must be typed in the exact same way as it is reported in the PΨFinder output as the script uses this information to grep the exon coords from the hg19 database used within PΨFinder. 
 
 ## PΨFinder Idea 
 
