@@ -24,8 +24,8 @@ def databases():
     """
     If the Ppsy environment is loaded this is the exact path to the exon coord, if you install it in another way you need to change it concordantly 
     """
-    #exoncoords = os.path.abspath(__file__).split("bin/Ppsy.py")[0] + "HG19_databases/Exon_coord_hg19_refgene.bed"
-    exoncoords = "~/.conda/envs/Ppsy/HG19_databases/Exon_coord_hg19_refgene.bed"
+    exoncoords = os.path.abspath(__file__).split("bin/Ppsy.py")[0] + "HG19_databases/Exon_coord_hg19_refgene.bed"
+    #exoncoords = "~/.conda/envs/Ppsy/HG19_databases/Exon_coord_hg19_refgene.bed"
     return(exoncoords)
 
 def CreatesIntermediateFilesCircos(Sample,baminput,parentcoord,insertsite,genename, exoncoords):
