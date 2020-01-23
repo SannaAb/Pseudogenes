@@ -285,7 +285,17 @@ The coverage is plotted using GVIZ in R.
 
 The known pseudogenes are annotated using the known processed pseuodogene coordinates from ensembl (hg19).
 
-## Memory Cons... 
+
+## Specs
+
+The memory consumption and the runtime of PΨFinder is dependent on the amount of data that you screen. 
+
+For a targeted genepanel with 28 genes and an average coverage of 500x, the time without the alignemnt step is ~50 min with a largest memory consumption of 2 GB ram meaning that you can without any issues run the PΨFinder on your personal computer.  
+For the same panel with the same depth but with performing the alignment within PΨFinder the runtime is ~60 minutes with a largest memory consumption of 28 GB ram. With this increase in memory consumption yoy might need to run the analysis on a HPC cluster. The memory required for running STAR will increase with the larger datasets. As PΨFinder for the moment does not run on parallele threads the alignment step is performed on a single core. With larger datasets it might be preferable to run STAR seperately with multithreading to decrease the runtime further. 
+
+
+## Memory Cons
+
 
 There is no easy way of implementing the total memory consumtion for the script as it is constantly changing to new processes. The easiest way is instead of running the memory profiles which is a python tools that allows you to plot the memory consumtion through time together with the main scripts child processes. 
 
