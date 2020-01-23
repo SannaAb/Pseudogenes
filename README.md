@@ -178,7 +178,7 @@ Below are the optional parameters to use when input is either Fastq or Bam
 
 PΨFinder gives one addtional way of visualizing your results in the form of a circos plot. Before running the command below make sure that circos is installed on you system and that the path to the exec of circos is within your path. 
 
-![text](SMAD4_SMAD4.png "Picture that displays the coverage over the insertion and the Parent gene")  
+![text](SMAD4_SMAD4.jpg "Picture that displays the coverage over the insertion and the Parent gene")  
 
 ```
 
