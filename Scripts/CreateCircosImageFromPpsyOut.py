@@ -1,5 +1,4 @@
-#/usr/bin/py 
-
+#!/usr/bin/python
 import sys
 import os
 import pysam
