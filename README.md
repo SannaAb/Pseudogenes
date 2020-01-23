@@ -7,8 +7,6 @@ Processed pseudogenes are structures that are reintroduced into the genome by re
 ![Pipeline](Workflow2.jpg "Picture displaying the PPsy pipeline")
 **Figure 1**: The workflow of PΨFinder. Input is either BAM or Fastq. The pipeline extracts pseudogene candidates by looking at reads spliced across known exon exon juntions. Then it uses chimeric reads (softclipped reads) and chimeric pairs for intersecting the pseudogenecandidates with the insert site. It reports the detected novel pseudogenes together with a report for found known processed pseudogenes. 
 
-
-
 ## Installation 
 
 The recommended way of installing the tool is through Anaconda.  
@@ -176,8 +174,7 @@ Below are the optional parameters to use when input is either Fastq or Bam
   
 ## Optional plotting 
 
-PΨFinder gives one addtional way of visualizing your results in the form of a circos plot. Before running the command below make sure that circos is installed on you system and that the path to the exec of circos is within your path. See *Figure 3* for an example of the circos plot created usingthe same data visualized in the default GVIZ plot in *Figure 2*. 
-
+PΨFinder gives one addtional way of visualizing your results in the form of a circos plot. Before running the command below make sure that circos is installed on you system and that the path to the exec of circos is within your path. See *Figure 3* for an example of the circos plot created usingthe same data visualized in the default GVIZ plot in *Figure 2*.   
 ![text](SMAD4_SMAD4.jpg "Picture that displays the coverage over the insertion and the Parent gene")  
 **Figure 3**: Coverage plot using Circos. The outer circle displays the coverage across the parent genes exons in the form of a heatmap, darker blue means higher coverage. The inner histogram is the coverage of the spliced reads across the parent genes exons. This is evidence for a processed pseudgene. The red histogram displays the coverage over the insert site.
 
@@ -284,7 +281,6 @@ The coverage is plotted using GVIZ in R.
 ### Known pseudogene annotation 
 
 The known pseudogenes are annotated using the known processed pseuodogene coordinates from ensembl (hg19).
-
 
 ## Specs
 
