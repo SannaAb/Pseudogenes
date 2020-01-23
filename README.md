@@ -213,7 +213,7 @@ MakePPsyReport_excel.py -I Sample1_PPsyOut Sample2_PPsyOut -O OUTFOLDER
 
 PΨFinder gives one addtional way of visualizing your results in the form of a circos plot. Before running the command below make sure that circos is installed on you system and that the path to the exec of circos is within your path. 
 
-![text](SMAD4_SMAD4.png, Picture that displays the coverage over the insertion and the Parent gene)
+![text](SMAD4_SMAD4.png, "Picture that displays the coverage over the insertion and the Parent gene")  
 
 ```
 
