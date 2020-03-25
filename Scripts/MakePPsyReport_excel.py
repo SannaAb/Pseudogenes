@@ -6,10 +6,8 @@
 import sys
 import os
 from os import listdir
-#from os.path import isfile, join
 import argparse
 import xlsxwriter
-#pip install XlsxWriter
 
 
 def parseArgs():
@@ -82,13 +80,17 @@ def WriteTableWithoutLinks(outfolder,SampleFolders):
                             insertranno = l.split("\t")[-1]
                             columns = (Sample,Pseudogene,ChimPairCount,ChimReadCount,insertsite, insertregion,insertranno)
                             worksheet.write_row(rownumber,0, columns)
+        else: # The report is not there which can be the case in this version. Might want to change this later?
+            columns = (Sample,'-','-','-','-','-','-')
+            rownumber+=1
+            worksheet.write_row(rownumber,0, columns)
     woorkbook.close()
 
     
 
 def main(SampleFolders,outfolder):
     writeOutputFolder(outfolder)
-    print "Parsing the xcell report ..."
+    print "Parsing the excel report ..."
     WriteTableWithoutLinks(outfolder,SampleFolders)
     print "Done!"
 
