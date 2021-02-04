@@ -41,6 +41,7 @@ Ppsy is also dependent on some tools outside of python. You need to have these t
 conda install -c bioconda bedtools
 conda install -c conda-forge -c bioconda samtools bzip2
 conda install -c bioconda star
+conda install -c conda-forge r-base
 conda install -c bioconda bioconductor-gviz
 conda install -c conda-forge ncurses # (?)
 
