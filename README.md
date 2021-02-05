@@ -32,6 +32,10 @@ The required python modules (pandas, pysam and psutil) will be installed.
 You can make sure that everything was installed correcly by typing Ppsy.py within your environment.
 
 
+#### About Python3
+
+To use python3 instead of just create the environment using python3 instead of python2.7. Then use the script `Ppsy_Py3.py` instead of `Ppsy.py`. You need to use the script `MakePPsyReport_html_Py3.py` instead of `MakePPsyReport_html.py` when forming the html report. The excel report script `MakePPsyReport_excel.py` works for both python versions. 
+
 ### Other dependencies 
 
 Ppsy is also dependent on some tools outside of python. You need to have these tools within your path to make sure that the script works correctly. You can install these tools within your environment using anaconda as well. Make sure that you have source activated your environment first. 
