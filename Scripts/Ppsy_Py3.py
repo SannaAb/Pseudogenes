@@ -98,12 +98,12 @@ def database():
     """
     # Check database after installation 
     logging.info('%s\tCollecting the paths to the HG19 databases', time.ctime().split(" ")[-2])
-    #genecoords = os.path.abspath(__file__).split("bin/Ppsy.py")[0] + "HG19_databases/Gene_coord_hg19_refgene.bed"
-    #exoncoords = os.path.abspath(__file__).split("bin/Ppsy.py")[0] + "HG19_databases/Exon_coord_hg19_refgene.bed"
-    genecoords = "/home/xabras/.conda/envs/Ppsy/HG19_databases/Gene_coord_hg19_refgene.bed"
-    exoncoords = "/home/xabras/.conda/envs/Ppsy/HG19_databases/Exon_coord_hg19_refgene.bed"
-    #pseudogenecoords = os.path.abspath(__file__).split("bin/Ppsy.py")[0] + "HG19_databases/KnownProcessedPseudogenes_Homo_sapiens.GRCh37.75_CHR.bed"
-    pseudogenecoords="/home/xabras/.conda/envs/Ppsy/HG19_databases/KnownProcessedPseudogenes_Homo_sapiens.GRCh37.75_CHR.bed"
+    genecoords = os.path.abspath(__file__).split("bin/Ppsy_Py3.py")[0] + "HG19_databases/Gene_coord_hg19_refgene.bed"
+    exoncoords = os.path.abspath(__file__).split("bin/Ppsy_Py3.py")[0] + "HG19_databases/Exon_coord_hg19_refgene.bed"
+    #genecoords = "/home/xabras/.conda/envs/Ppsy/HG19_databases/Gene_coord_hg19_refgene.bed"
+    #exoncoords = "/home/xabras/.conda/envs/Ppsy/HG19_databases/Exon_coord_hg19_refgene.bed"
+    pseudogenecoords = os.path.abspath(__file__).split("bin/Ppsy_Py3.py")[0] + "HG19_databases/KnownProcessedPseudogenes_Homo_sapiens.GRCh37.75_CHR.bed"
+    #pseudogenecoords="/home/xabras/.conda/envs/Ppsy/HG19_databases/KnownProcessedPseudogenes_Homo_sapiens.GRCh37.75_CHR.bed"
     return(genecoords,pseudogenecoords,exoncoords)
 
 def CreatingOutputDir(Sample):
