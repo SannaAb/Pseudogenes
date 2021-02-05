@@ -23,7 +23,7 @@ When the conda environment for PΨFinder is loaded we download the latest versio
 
 ```
 
-wget https://github.com/SannaAb/Pseudogenes/archive/v.0.2.1.tar.gz
+wget https://github.com/SannaAb/Pseudogenes/archive/v.0.2.3.tar.gz
 
 pip install v.0.2.3.tar.gz
 
