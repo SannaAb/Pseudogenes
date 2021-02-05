@@ -4,7 +4,7 @@ import setuptools
 setuptools.setup(
     name='Ppsy',  
     version='0.1',
-    scripts=['Scripts/Ppsy.py','Scripts/MakePPsyReport_html.py', 'Scripts/MakePPsyReport_excel.py', 'Scripts/CreateCircosImageFromPpsyOut.py'] ,
+    scripts=['Scripts/Ppsy.py','Scripts/MakePPsyReport_html.py', 'Scripts/MakePPsyReport_excel.py', 'Scripts/CreateCircosImageFromPpsyOut.py', 'Scripts/Ppsy_Py3.py', 'Scripts/MakePPsyReport_html_Py3.py'] ,
     author="Sanna Abrahamsson",
     author_email="sannaabrahamsson@gmail.com",
     description="Script to detect Processed Pseudogenes",
