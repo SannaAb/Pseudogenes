@@ -4,7 +4,7 @@
 PΨFinder is pipeline for detecting novel processed pseudogenes using DNA sequencing data (Exomic, Genomic, Targeted gene panels etc). 
 Processed pseudogenes are structures that are reintroduced into the genome by retrotransposition. This feature is used by PΨFinder that detects pseudogene candidates by searching for spliced genes withing the genomic sequencing data. Insert positions of the pseudogene candidates are recorded by linking the pseudogene candidate with softclipping (chimeric reads) and read pair insert sizes (chimeric pairs). The idea of this is dependent on an splice aware aligner that allows softclipping and chimeric read pairs. See *Figure 1* for the the overall workflow. 
 
-![Pipeline](Workflow2.jpg "Picture displaying the PPsy pipeline")
+![Pipeline](Workflow2.jpg "Picture displaying the PPsy pipeline")  
 **Figure 1**: The workflow of PΨFinder. Input is either BAM or Fastq. The pipeline extracts pseudogene candidates by looking at reads spliced across known exon exon juntions. Then it uses chimeric reads (softclipped reads) and chimeric pairs for intersecting the pseudogenecandidates with the insert site. It reports the detected novel pseudogenes together with a report for found known processed pseudogenes. 
 
 ## Installation 
