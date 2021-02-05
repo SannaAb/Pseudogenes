@@ -90,9 +90,9 @@ def WriteTableWithoutLinks(outfolder,SampleFolders):
 
 def main(SampleFolders,outfolder):
     writeOutputFolder(outfolder)
-    print "Parsing the excel report ..."
+    print("Parsing the excel report ...")
     WriteTableWithoutLinks(outfolder,SampleFolders)
-    print "Done!"
+    print("Done!")
 
 
 if __name__=='__main__':
