@@ -376,12 +376,12 @@ def ClippedBamtoCoord(bamClipped,Cleaninglist, MovingList):
                             if "M" == char[0]:
                                 start=str(int(line.split("\t")[3])+int(CigarList[0]))
                                 print(chrom+":"+start+"\t"+chromchim+":"+startchim, file=out)
-                                print(chrom+":"+start+"\t"+chromchim+":"+startchim)
+                                #print(chrom+":"+start+"\t"+chromchim+":"+startchim)
                                 listofreads.append(read)
                             else:
                                 start=str(int(line.split("\t")[3]))
                                 print(chrom+":"+start+"\t"+chromchim+":"+startchim, file=out)
-                                print(chrom+":"+start+"\t"+chromchim+":"+startchim)
+                                #print(chrom+":"+start+"\t"+chromchim+":"+startchim)
                                 listofreads.append(read)
     return clippedbed 
 
@@ -396,7 +396,6 @@ def clippedreadbinning(clippedbed, Cleaninglist, MovingList,ChimReadDepthTresh,C
     logging.info('%s\tBinning the clipped reads coords, depth %s',time.ctime().split(" ")[-2], ChimReadDepthTresh)
     command = "cut -f 1 %s | sed 's/:/\t/g' | sort -k1,1 -k2,2n | awk 'OFS=\"\t\" {print $1,$2,$2}' | mergeBed -c 1 -o count -d %s| awk '$4 > 4 {print $1\"\t\"$2\"\t\"$3}' > %s" %(clippedbed, ChimReadBinningTresh,clippedbedrange) # obs! Overlap is counted if they overlap a userdefined treshold away in nucleotides
     os.system(command)
-    print(clippedbed)
     # Need to now how many lines you have so you start the counting before the for loop breaks below 
     with open(clippedbed) as f:
         for nrLines, l in enumerate(f):
@@ -406,7 +405,6 @@ def clippedreadbinning(clippedbed, Cleaninglist, MovingList,ChimReadDepthTresh,C
             counter = 0 
             for line in clippedrange:
                 line = line.strip()
-                print(line)
                 chrom = line.split("\t")[0]
                 start = line.split("\t")[1]
                 end = line.split("\t")[2]
@@ -436,11 +434,11 @@ def clippedreadbinning(clippedbed, Cleaninglist, MovingList,ChimReadDepthTresh,C
                                     amount += 1 
                                     if i+1 == len(value) and amount > ChimReadDepthTresh: # If you are reaching the end of the list and you have atleast 5 
                                         print(line + "\t" + str(amount) + "\t" + key + "\t" + str(sortedlist[firstitem]) + "\t" + str(sortedlist[i]), file=clippedout)
-                                        print(line + "\t" + str(amount) + "\t" + key + "\t" + str(sortedlist[firstitem]) + "\t" + str(sortedlist[i]))
+                                        #print(line + "\t" + str(amount) + "\t" + key + "\t" + str(sortedlist[firstitem]) + "\t" + str(sortedlist[i]))
                                 else: 
                                     if amount > ChimReadDepthTresh: # not in the end of the list but you have 10 by default
                                         print(line + "\t" + str(amount) + "\t" + key + "\t" + str(sortedlist[firstitem]) + "\t" + str(sortedlist[i-1]),file=clippedout)
-                                        print(line + "\t" + str(amount) + "\t" + key + "\t" + str(sortedlist[firstitem]) + "\t" + str(sortedlist[i-1]))
+                                        #print(line + "\t" + str(amount) + "\t" + key + "\t" + str(sortedlist[firstitem]) + "\t" + str(sortedlist[i-1]))
                                     firstitem = i 
                                     amount = 1 
     return clippedmapping
@@ -477,7 +475,7 @@ def intersectClippedPseudogeneCandidates(Sample, clippedmapping, Pseudogenecandi
     if not os.stat(clippedwithpseudogeneoverlap).st_size==0: # The clipped reads with the pseudogenes might be empty and this will break the loop. Therefore we are making sure that the file is not empty before the analysis
         pandasdf=pd.read_csv(clippedwithpseudogeneoverlap, sep = "\t", header=None) # If we have the same fusion in different positions in the pseudogene we merge them 
         pandasdf2= pandasdf.groupby([0,1,2,3,4,5,6], as_index=False)[7].sum()
-        print(pandasdf2)
+        #print(pandasdf2)
         pandasdf2.to_csv(clippedwithpseudogeneoverlap,sep="\t", header = False, index=False)
     else: 
         logging.info('%s\tObs the Psedugene clipp overlap is emtpy',time.ctime().split(" ")[-2])
